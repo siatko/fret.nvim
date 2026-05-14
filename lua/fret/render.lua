@@ -1,26 +1,24 @@
--- Renders a song (from tab.lua) into a list of display lines + a position map.
--- Position map: pos_map[row][col] = {mi=measure_idx, si=slot_idx, str=string_idx}
---   row 0 = beat header (not navigable)
---   rows 1..6 = strings e,B,G,D,A,E
+-- Renders all sections into a flat list of lines plus navigation metadata.
+--
+-- Returns: lines, pos_map, slot_starts, slot_widths, section_rows
+--   lines        - flat list of strings (the buffer content)
+--   pos_map      - pos_map[abs_row][col] = {sec,mi,si,str}  (1-indexed)
+--   slot_starts  - slot_starts[sec][mi][si] = col (1-indexed)
+--   slot_widths  - slot_widths[sec][mi][si] = char width
+--   section_rows - section_rows[sec] = {header_row, ruler_row, str_start}
 local M = {}
 
-local tab = require("fret.tab")
+local tab    = require("fret.tab")
 local config = require("fret.config")
 
 local STRINGS = { "e", "B", "G", "D", "A", "E" }
 
--- Returns display string for a fret number (nil -> "-")
 local function fmt_fret(fret, width)
-  if fret == nil then
-    return string.rep("-", width)
-  end
+  if fret == nil then return string.rep("-", width) end
   local s = tostring(fret)
-  -- right-pad to width
   return s .. string.rep("-", width - #s)
 end
 
--- Compute the column width needed for each slot in a measure
--- (max fret digits across all strings at that slot, minimum 1)
 local function measure_col_widths(measure)
   local widths = {}
   for si, slot in ipairs(measure.slots) do
@@ -34,142 +32,133 @@ local function measure_col_widths(measure)
   return widths
 end
 
--- Build the beat label for a slot position within a measure
--- beat_num (1-based), sub_pos (1=on beat, >1=subdivision tick)
--- subdivision: slots per beat
 local function beat_label(slot_idx, subdivision)
   local beat_num = math.ceil(slot_idx / subdivision)
   local sub_pos  = (slot_idx - 1) % subdivision + 1
-  if sub_pos == 1 then
-    return tostring(beat_num)
-  else
-    return "."
-  end
+  return sub_pos == 1 and tostring(beat_num) or "."
 end
 
--- Left-pad a string to width
 local function lpad(s, w)
   return string.rep(" ", w - #s) .. s
 end
 
-function M.render(song)
-  local strings = config.options.strings or STRINGS
-  local n_strings = #strings
-  local subdivision = song.subdivision
-  local spm = tab.slots_per_measure(song)
+local function section_header(section)
+  local parts = {}
+  if section.repeat_start then table.insert(parts, "|:") end
+  if section.name and section.name ~= "" then
+    table.insert(parts, "[" .. section.name .. "]")
+  end
+  if section.repeat_end then table.insert(parts, ":|") end
+  return #parts > 0 and table.concat(parts, "  ") or "---"
+end
 
-  -- prefix width must fit both the longest string name and the time signature
+function M.render(song)
+  local strings     = config.options.strings or STRINGS
+  local n_strings   = #strings
+  local subdivision = song.subdivision
+  local spm         = tab.slots_per_measure(song)
+
   local max_str_len = 0
   for _, s in ipairs(strings) do
     if #s > max_str_len then max_str_len = #s end
   end
-  local ts = song.time_sig.num .. "/" .. song.time_sig.den
+  local ts       = song.time_sig.num .. "/" .. song.time_sig.den
   local prefix_w = math.max(max_str_len, #ts) + 1
 
-  local header_prefix = ts .. string.rep(" ", prefix_w - #ts)
-
-  -- Build per-measure data: col_widths, rendered beat header segment, rendered string segments
-  local measure_headers = {}  -- list of strings (beat ruler segment per measure)
-  local measure_strings = {}  -- measure_strings[mi][str_idx] = string segment
-
-  for mi, measure in ipairs(song.measures) do
-    local widths = measure_col_widths(measure)
-    local header_seg = " "
-    local str_segs = {}
-    for i = 1, n_strings do str_segs[i] = " " end
-
-    for si = 1, spm do
-      local w = widths[si]
-      local lbl = beat_label(si, subdivision)
-      header_seg = header_seg .. lpad(lbl, w) .. " "
-      for str_idx = 1, n_strings do
-        local fret = measure.slots[si] and measure.slots[si][str_idx]
-        str_segs[str_idx] = str_segs[str_idx] .. fmt_fret(fret, w) .. " "
-      end
-    end
-
-    measure_headers[mi] = header_seg .. "|"
-    measure_strings[mi] = {}
-    for str_idx = 1, n_strings do
-      measure_strings[mi][str_idx] = str_segs[str_idx] .. "|"
-    end
-  end
-
-  -- Assemble lines
-  -- Line 1: beat ruler
-  local ruler = header_prefix .. "|"
-  for mi = 1, #song.measures do
-    ruler = ruler .. measure_headers[mi]
-  end
-
-  -- Lines 2..n_strings+1: one per string
-  local str_lines = {}
-  for str_idx = 1, n_strings do
-    local name = strings[str_idx]
-    local line = name .. string.rep(" ", prefix_w - #name) .. "|"
-    for mi = 1, #song.measures do
-      line = line .. measure_strings[mi][str_idx]
-    end
-    str_lines[str_idx] = line
-  end
-
-  local lines = { ruler }
-  for _, l in ipairs(str_lines) do
-    table.insert(lines, l)
-  end
-
-  -- Build position map: pos_map[line_idx][col_idx (1-based)] = {mi,si,str}
-  -- line 1 = ruler (not navigable for notes)
-  -- lines 2..n+1 = strings
-  --
-  -- We need to know the byte offset of each slot column within each measure segment.
-  -- Re-compute per measure the starting col of each slot in the assembled line.
-  local pos_map = {}
-  for row = 1, n_strings + 1 do
-    pos_map[row] = {}
-  end
-
-  -- Compute col offsets of each slot in the final line
-  -- prefix_w + 1 (for '|') = start of first measure content
-  -- within a measure: " " (1 char) then slot_1_width chars then " " ... repeat
-  -- but let's just walk character by character using widths
-
-  local function build_slot_col_map()
-    -- Returns: slot_starts[mi][si] = column index (1-based) of the first char of the slot
-    local slot_starts = {}
-    local col = prefix_w + 1 + 1 -- after "prefix|"
-    for mi, measure in ipairs(song.measures) do
-      local widths = measure_col_widths(measure)
-      slot_starts[mi] = {}
-      col = col + 1 -- the leading " " of the measure segment
-      for si = 1, spm do
-        slot_starts[mi][si] = col
-        col = col + widths[si] + 1 -- slot + trailing " "
-      end
-      col = col + 1 -- the closing "|"
-    end
-    return slot_starts
-  end
-
-  local slot_starts = build_slot_col_map()
-
-  -- slot_widths[mi][si] = character width of that slot (for highlighting)
+  local all_lines   = {}
+  local section_rows = {}
+  local slot_starts = {}
   local slot_widths = {}
-  for mi, measure in ipairs(song.measures) do
-    slot_widths[mi] = measure_col_widths(measure)
-    for si = 1, spm do
-      local sc = slot_starts[mi][si]
-      local w  = slot_widths[mi][si]
-      for str_idx = 1, n_strings do
-        local row = str_idx + 1 -- +1 because row 1 is ruler
-        for c = sc, sc + w - 1 do
-          pos_map[row][c] = { mi = mi, si = si, str = str_idx }
+  local pos_map     = {}
+
+  for sec_idx, section in ipairs(song.sections) do
+    -- ── header ──────────────────────────────────────────────────────────────
+    table.insert(all_lines, section_header(section))
+    local header_row = #all_lines
+
+    -- ── ruler + string lines ─────────────────────────────────────────────────
+    local ruler = ts .. string.rep(" ", prefix_w - #ts) .. "|"
+    local str_lines = {}
+    for i = 1, n_strings do
+      str_lines[i] = strings[i] .. string.rep(" ", prefix_w - #strings[i]) .. "|"
+    end
+
+    slot_starts[sec_idx] = {}
+    slot_widths[sec_idx] = {}
+
+    -- col tracks the 1-indexed character position within each line.
+    -- After the prefix and the leading "|": position prefix_w + 2.
+    local col = prefix_w + 2
+
+    for mi, measure in ipairs(section.measures) do
+      local widths = measure_col_widths(measure)
+      slot_starts[sec_idx][mi] = {}
+      slot_widths[sec_idx][mi] = {}
+
+      -- Each measure segment: " " + (slot + " ") * spm + "|"
+      local seg_ruler = " "
+      local seg_strs  = {}
+      for i = 1, n_strings do seg_strs[i] = " " end
+
+      col = col + 1  -- leading " " of the segment
+
+      for si = 1, spm do
+        slot_starts[sec_idx][mi][si] = col
+        slot_widths[sec_idx][mi][si] = widths[si]
+
+        seg_ruler = seg_ruler .. lpad(beat_label(si, subdivision), widths[si]) .. " "
+        for str_idx = 1, n_strings do
+          local fret = measure.slots[si] and measure.slots[si][str_idx]
+          seg_strs[str_idx] = seg_strs[str_idx] .. fmt_fret(fret, widths[si]) .. " "
+        end
+
+        col = col + widths[si] + 1  -- slot chars + trailing " "
+      end
+
+      ruler = ruler .. seg_ruler .. "|"
+      for i = 1, n_strings do
+        str_lines[i] = str_lines[i] .. seg_strs[i] .. "|"
+      end
+
+      col = col + 1  -- closing "|"
+    end
+
+    table.insert(all_lines, ruler)
+    local ruler_row = #all_lines
+
+    local str_start = #all_lines + 1
+    for i = 1, n_strings do
+      table.insert(all_lines, str_lines[i])
+    end
+
+    section_rows[sec_idx] = {
+      header_row = header_row,
+      ruler_row  = ruler_row,
+      str_start  = str_start,
+    }
+
+    -- ── pos_map ──────────────────────────────────────────────────────────────
+    for mi = 1, #section.measures do
+      for si = 1, spm do
+        local sc = slot_starts[sec_idx][mi][si]
+        local w  = slot_widths[sec_idx][mi][si]
+        for str_idx = 1, n_strings do
+          local row = str_start + str_idx - 1
+          pos_map[row] = pos_map[row] or {}
+          for c = sc, sc + w - 1 do
+            pos_map[row][c] = { sec = sec_idx, mi = mi, si = si, str = str_idx }
+          end
         end
       end
     end
+
+    -- blank line between sections
+    if sec_idx < #song.sections then
+      table.insert(all_lines, "")
+    end
   end
 
-  return lines, pos_map, slot_starts, slot_widths
+  return all_lines, pos_map, slot_starts, slot_widths, section_rows
 end
 
 return M

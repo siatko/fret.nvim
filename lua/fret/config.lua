@@ -1,10 +1,9 @@
 local M = {}
 
 M.defaults = {
-  subdivision = 4, -- slots per beat: 1=quarter, 2=8th, 4=16th
-  time_sig = { num = 4, den = 4 },
-  strings = { "e", "B", "G", "D", "A", "E" },
-  slot_width = 2, -- chars per slot column (fret + separator)
+  subdivision = 4,
+  time_sig    = { num = 4, den = 4 },
+  strings     = { "e", "B", "G", "D", "A", "E" },
   keymaps = {
     move_left      = "h",
     move_right     = "l",
@@ -16,6 +15,13 @@ M.defaults = {
     set_timesig    = "t",
     set_subdiv     = "s",
     copy_tab       = "Y",
+    add_section    = "a",
+    delete_section = "D",
+    rename_section = "r",
+    repeat_start   = "[",
+    repeat_end     = "]",
+    next_section   = "}",
+    prev_section   = "{",
     new_tab        = "<leader>gt",
   },
 }

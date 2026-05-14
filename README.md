@@ -64,23 +64,50 @@ Dots (`.`) are subdivision ticks between beats.
 
 ## Keymaps (inside the tab editor)
 
-| Key      | Action                        |
-|----------|-------------------------------|
+**Notes**
+
+| Key       | Action                       |
+|-----------|------------------------------|
 | `h` / `l` | Move left / right (slots)    |
 | `j` / `k` | Move down / up (strings)     |
-| `0`–`9`  | Enter fret number             |
-| `x`      | Clear note at cursor          |
-| `m`      | Append a new measure          |
-| `M`      | Delete current measure        |
-| `t`      | Change time signature         |
-| `s`      | Change subdivision            |
-| `Y`      | Copy whole tab to clipboard   |
+| `0`–`9`   | Enter fret number            |
+| `x`       | Clear note at cursor         |
+| `m`       | Append a new measure         |
+| `M`       | Delete current measure       |
+| `t`       | Change time signature        |
+| `s`       | Change subdivision           |
+| `Y`       | Copy whole tab to clipboard  |
 
-**Entering a fret:** type the first digit; for two-digit frets (e.g. 12) keep typing, then press `<Enter>` or `<Space>` to confirm.
+**Sections**
 
-**Workflow:** build the tab, press `Y` to copy it, then paste into a markdown file or anywhere else.
+| Key  | Action                              |
+|------|-------------------------------------|
+| `a`  | Add new section below current       |
+| `D`  | Delete current section              |
+| `r`  | Rename current section              |
+| `[`  | Toggle repeat start (`\|:`) on section |
+| `]`  | Toggle repeat end (`:\|`) on section   |
+| `{`  | Jump to previous section            |
+| `}`  | Jump to next section                |
+
+**Entering a fret:** type the first digit; for two-digit frets (e.g. 12) keep typing, then press `<Enter>` to confirm.
+
+**Workflow:** build the tab section by section, press `Y` to copy everything, paste into a markdown file.
+
+## Section output format
+
+```
+|: [Verse]
+4/4 | 1 . . . 2 . . . |
+e   | - - - - - - - - |
+...
+
+[Chorus]  :|
+4/4 | 1 . . . 2 . . . |
+e   | - - - - - - - - |
+```
 
 ## Commands
 
 - `:FretNew` — open a new tab editor (prompts for time sig and smallest note)
-- Inside the buffer: `:FretAddMeasure`, `:FretTimeSig`, `:FretSubdiv`, `:FretCopy`
+- Inside the buffer: `:FretAddMeasure`, `:FretTimeSig`, `:FretSubdiv`, `:FretCopy`, `:FretAddSection`, `:FretDeleteSection`, `:FretRenameSection`
