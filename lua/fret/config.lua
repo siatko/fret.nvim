@@ -25,6 +25,7 @@ M.defaults = {
     edit_title     = "T",
     edit_subtitle  = "U",
     edit_order     = "O",
+    help           = "?",
     new_tab        = "<leader>gt",
   },
 }

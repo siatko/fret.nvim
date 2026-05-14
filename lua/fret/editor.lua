@@ -352,6 +352,93 @@ local function copy_tab(bufnr)
   vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
 end
 
+-- ── help popup ───────────────────────────────────────────────────────────────
+
+local function show_help()
+  local km = config.options.keymaps
+  local lines = {
+    "  fret.nvim keybindings  ",
+    "",
+    "  Navigation",
+    ("  %-12s  move left / right (slots)"):format(km.move_left .. " / " .. km.move_right),
+    ("  %-12s  move up / down (strings)"):format(km.move_up .. " / " .. km.move_down),
+    ("  %-12s  previous / next section"):format(km.prev_section .. " / " .. km.next_section),
+    "",
+    "  Notes",
+    ("  %-12s  enter fret number"):format("0 – 9"),
+    ("  %-12s  clear note at cursor"):format(km.clear_note),
+    "",
+    "  Measures",
+    ("  %-12s  add measure"):format(km.add_measure),
+    ("  %-12s  delete measure"):format(km.delete_measure),
+    "",
+    "  Sections",
+    ("  %-12s  add section below"):format(km.add_section),
+    ("  %-12s  delete section"):format(km.delete_section),
+    ("  %-12s  rename section"):format(km.rename_section),
+    ("  %-12s  toggle repeat start (|:)"):format(km.repeat_start),
+    ("  %-12s  toggle repeat end   (:|)"):format(km.repeat_end),
+    "",
+    "  Song metadata",
+    ("  %-12s  edit title"):format(km.edit_title),
+    ("  %-12s  edit subtitle"):format(km.edit_subtitle),
+    ("  %-12s  edit section order"):format(km.edit_order),
+    "",
+    "  Other",
+    ("  %-12s  change time signature"):format(km.set_timesig),
+    ("  %-12s  change subdivision"):format(km.set_subdiv),
+    ("  %-12s  copy tab to clipboard"):format(km.copy_tab),
+    ("  %-12s  show this help"):format(km.help),
+    "",
+    "  press q or <Esc> to close",
+  }
+
+  -- compute window size
+  local width = 0
+  for _, l in ipairs(lines) do
+    if #l > width then width = #l end
+  end
+  width = width + 2
+  local height = #lines
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(buf, "modifiable", false)
+  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+
+  local ui     = vim.api.nvim_list_uis()[1]
+  local row    = math.floor((ui.height - height) / 2)
+  local col    = math.floor((ui.width  - width)  / 2)
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    row      = row,
+    col      = col,
+    width    = width,
+    height   = height,
+    style    = "minimal",
+    border   = "rounded",
+  })
+
+  vim.api.nvim_win_set_option(win, "cursorline", false)
+
+  -- highlight the title line
+  local ns_help = vim.api.nvim_create_namespace("fret_help")
+  vim.api.nvim_buf_add_highlight(buf, ns_help, "Title",   0, 0, -1)
+  -- highlight section headings
+  for i, l in ipairs(lines) do
+    if l:match("^  %u") and not l:match("^  %u%-") and not l:match("press") then
+      vim.api.nvim_buf_add_highlight(buf, ns_help, "Special", i - 1, 0, -1)
+    end
+  end
+
+  local close = function() vim.api.nvim_win_close(win, true) end
+  local copts = { buffer = buf, nowait = true, silent = true }
+  vim.keymap.set("n", "q",     close, copts)
+  vim.keymap.set("n", "<Esc>", close, copts)
+  vim.keymap.set("n", "?",     close, copts)
+end
+
 -- ── keymaps ───────────────────────────────────────────────────────────────────
 
 local function setup_keymaps(bufnr)
@@ -382,6 +469,7 @@ local function setup_keymaps(bufnr)
   map(km.edit_title,     function() edit_title(bufnr) end)
   map(km.edit_subtitle,  function() edit_subtitle(bufnr) end)
   map(km.edit_order,     function() edit_order(bufnr) end)
+  map(km.help,           function() show_help() end)
 
   for d = 0, 9 do
     local digit = tostring(d)
