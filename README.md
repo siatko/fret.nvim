@@ -7,9 +7,9 @@
                  \___/
                    |
            ========|========
-           ========|========    Stop scribbling tabs
-           ========|========    on napkins. Do it
-           ========|========    in Neovim like a pro.
+           ========|========    Stop opening a blank
+           ========|========    text file, typing
+           ========|========    e|------, and quitting.
            ========|========
            ========|========
               _____|_____
@@ -21,19 +21,19 @@
              \___________/
 ```
 
-> A guitar tab editor for Neovim. Because your bandmates deserve better than a
-> blurry photo of a Post-it note.
+> A guitar tab editor for Neovim. For the tabs you'll write at midnight,
+> forget about, and rediscover six months later wondering who wrote them.
 
 ## Features
 
 - 6-string tab grid (e B G D A E) — all the strings, none of the broken ones
-- Beat ruler with time signature support (4/4, 3/4, 12/8, whatever weird thing you're playing)
-- Subdivisions: quarter, 8th, 16th, 32nd notes — go ahead, write that sweep picking run
-- Multiple named sections (`[Intro]`, `[Verse]`, `[That part you always mess up]`)
-- Repeat markers (`|:` / `:|`) so you don't have to write the chorus four times
+- Beat ruler with time signature support (4/4, 3/4, 12/8, whatever you heard on that one album)
+- Subdivisions: quarter, 8th, 16th, 32nd — go ahead, write that run you'll never play up to speed
+- Multiple named sections (`[Intro]`, `[Verse]`, `[That part I always mess up]`)
+- Repeat markers (`|:` / `:|`) so you don't have to copy-paste the same riff four times
 - Song title, subtitle and section order (`A A B A C B A` — classic)
-- Column + cell highlight so you always know where the cursor is
-- Press `?` for a help popup — no more tab-switching to the README
+- Column + cell highlight so you always know where your cursor went
+- Press `?` for a help popup — no more alt-tabbing to the README mid-riff
 
 ## What it looks like
 
@@ -64,15 +64,15 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
   "siatko/fret.nvim",
   config = function()
     require("fret").setup({
-      subdivision = 4,             -- 1=quarter, 2=8th, 4=16th, 8=32nd
-      time_sig    = { num=4, den=4 },
       keymaps = {
-        new_tab = "<leader>gt",    -- g for guitar, t for tab, genius
+        new_tab = "<leader>gt",
       },
     })
   end,
 }
 ```
+
+Time signature and subdivision are chosen per-tab through the prompts — no need to hardcode them.
 
 ## Workflow
 
