@@ -176,3 +176,4 @@ Everything can be changed afterwards with `T`, `U`, `G`, `O`, `t`, `s`.
 ## TODO
 
 - [ ] Frets 10+ shift the tab grid — the sheet table uses fixed-width columns sized for one digit, so double-digit fret numbers break alignment
+- [ ] Technique markers between notes (hammer-on `h`, pull-off `p`, slide `/` `\`) — requires extending the slot data model to store a connection type, then rendering the filler character between two connected notes accordingly
