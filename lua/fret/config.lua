@@ -15,7 +15,7 @@ M.defaults = {
     delete_measure = "M",
     set_timesig    = "t",
     set_subdiv     = "s",
-    new_tab        = "<leader>fn",
+    new_tab        = "<leader>gt",
   },
 }
 

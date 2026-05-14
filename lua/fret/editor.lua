@@ -230,12 +230,17 @@ end
 
 -- ── public API ────────────────────────────────────────────────────────────────
 
-function M.open(opts)
-  opts = opts or {}
-  local song = opts.song or tab_mod.new({
-    time_sig  = config.options.time_sig,
-    subdivision = config.options.subdivision,
-  })
+local TIME_SIGS = { "4/4", "3/4", "2/4", "6/8", "5/4", "7/8", "12/8" }
+
+local SUBDIVISIONS = {
+  { label = "4th  (quarter notes)", value = 1 },
+  { label = "8th  notes",           value = 2 },
+  { label = "16th notes",           value = 4 },
+  { label = "32nd notes",           value = 8 },
+}
+
+local function open_after_prompt(time_sig, subdivision)
+  local song = tab_mod.new({ time_sig = time_sig, subdivision = subdivision })
 
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_name(bufnr, "fret://tab")
@@ -246,9 +251,9 @@ function M.open(opts)
 
   state[bufnr] = {
     song    = song,
-    cur_mi  = 1, -- current measure index
-    cur_si  = 1, -- current slot index
-    cur_str = 1, -- current string index (1=e)
+    cur_mi  = 1,
+    cur_si  = 1,
+    cur_str = 1,
     pos_map = {},
     slot_starts = {},
   }
@@ -267,17 +272,63 @@ function M.open(opts)
     set_subdivision(bufnr)
   end, { desc = "Set subdivision" })
 
-  -- Clean up state when buffer is wiped
   vim.api.nvim_create_autocmd("BufWipeout", {
     buffer = bufnr,
     once = true,
-    callback = function()
-      state[bufnr] = nil
-    end,
+    callback = function() state[bufnr] = nil end,
   })
 
   vim.api.nvim_set_current_buf(bufnr)
   redraw(bufnr)
+end
+
+function M.open(opts)
+  if opts and opts.song then
+    -- called programmatically with an existing song, skip prompts
+    open_after_prompt(opts.song.time_sig, opts.song.subdivision)
+    return
+  end
+
+  -- Step 1: pick time signature
+  local ts_items = vim.list_extend(vim.deepcopy(TIME_SIGS), { "Custom…" })
+  vim.ui.select(ts_items, { prompt = "Time signature:" }, function(choice)
+    if not choice then return end
+
+    local function proceed_with_ts(ts_str)
+      local num, den = ts_str:match("^(%d+)/(%d+)$")
+      num, den = tonumber(num), tonumber(den)
+      if not num or not den or den == 0 then
+        vim.notify("fret: invalid time signature", vim.log.levels.WARN)
+        return
+      end
+      local time_sig = { num = num, den = den }
+
+      -- Step 2: pick smallest note
+      local subdiv_labels = {}
+      for _, s in ipairs(SUBDIVISIONS) do
+        table.insert(subdiv_labels, s.label)
+      end
+      vim.ui.select(subdiv_labels, { prompt = "Smallest note:" }, function(subdiv_choice)
+        if not subdiv_choice then return end
+        local subdivision = 1
+        for _, s in ipairs(SUBDIVISIONS) do
+          if s.label == subdiv_choice then
+            subdivision = s.value
+            break
+          end
+        end
+        open_after_prompt(time_sig, subdivision)
+      end)
+    end
+
+    if choice == "Custom…" then
+      vim.ui.input({ prompt = "Time signature (e.g. 5/4): " }, function(input)
+        if input and input ~= "" then proceed_with_ts(input) end
+      end)
+    else
+      proceed_with_ts(choice)
+    end
+  end)
 end
 
 return M
