@@ -58,15 +58,14 @@ function M.render(song)
   local subdivision = song.subdivision
   local spm = tab.slots_per_measure(song)
 
-  -- prefix width: "  e  " style; find max string name length
+  -- prefix width must fit both the longest string name and the time signature
   local max_str_len = 0
   for _, s in ipairs(strings) do
     if #s > max_str_len then max_str_len = #s end
   end
-  local prefix_w = max_str_len + 1 -- "e " or "E "
-
-  -- time sig header prefix (same width as string prefix)
   local ts = song.time_sig.num .. "/" .. song.time_sig.den
+  local prefix_w = math.max(max_str_len, #ts) + 1
+
   local header_prefix = ts .. string.rep(" ", prefix_w - #ts)
 
   -- Build per-measure data: col_widths, rendered beat header segment, rendered string segments
