@@ -7,9 +7,9 @@
                  \___/
                    |
            ========|========
-           ========|========    Stop opening a blank
-           ========|========    text file, typing
-           ========|========    e|------, and quitting.
+           ========|========    fret (v.) to worry.
+           ========|========    fret (n.) guitar part.
+           ========|========    This plugin: both.
            ========|========
            ========|========
               _____|_____
@@ -72,7 +72,6 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
 }
 ```
 
-Time signature and subdivision are chosen per-tab through the prompts — no need to hardcode them.
 
 ## Workflow
 
