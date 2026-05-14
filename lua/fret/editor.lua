@@ -9,6 +9,8 @@ local config  = require("fret.config")
 local state = {}
 local tab_count = 0
 
+local ns = vim.api.nvim_create_namespace("fret_cursor")
+
 local STRINGS = { "e", "B", "G", "D", "A", "E" }
 
 -- ── helpers ──────────────────────────────────────────────────────────────────
@@ -17,36 +19,57 @@ local function get_state(bufnr)
   return state[bufnr]
 end
 
+-- Apply extmark highlights for the current cell and its slot column
+local function update_highlights(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
+
+  local sc = st.slot_starts[st.cur_mi] and st.slot_starts[st.cur_mi][st.cur_si]
+  local w  = st.slot_widths[st.cur_mi] and st.slot_widths[st.cur_mi][st.cur_si]
+  if not sc or not w then return end
+
+  local n_strings = #(config.options.strings or { "e", "B", "G", "D", "A", "E" })
+  local col_s = sc - 1 -- 0-indexed
+  local col_e = sc - 1 + w
+
+  -- Highlight the whole slot column across all string rows (rows 2..n+1, 0-indexed 1..n)
+  for str_idx = 1, n_strings do
+    local row0 = str_idx + 1 - 1 -- 0-indexed buffer row
+    local hl = (str_idx == st.cur_str) and "FretCursorCell" or "FretCursorCol"
+    vim.api.nvim_buf_add_highlight(bufnr, ns, hl, row0, col_s, col_e)
+  end
+end
+
 -- Re-render and restore cursor to the correct position
 local function redraw(bufnr)
   local st = get_state(bufnr)
   if not st then return end
 
-  local lines, pos_map, slot_starts = render.render(st.song)
+  local lines, pos_map, slot_starts, slot_widths = render.render(st.song)
   st.pos_map    = pos_map
   st.slot_starts = slot_starts
+  st.slot_widths = slot_widths
 
   vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
 
-  -- Place cursor at (st.cur_str+1 row, slot start col)
-  local row  = st.cur_str + 1 -- 1-indexed: row 1=ruler, rows 2..7=strings
-  local spm  = tab_mod.slots_per_measure(st.song)
-  -- clamp cursor measure/slot
-  if st.cur_mi > #st.song.measures then
-    st.cur_mi = #st.song.measures
-  end
+  -- clamp cursor
+  local spm = tab_mod.slots_per_measure(st.song)
+  if st.cur_mi > #st.song.measures then st.cur_mi = #st.song.measures end
   if st.cur_si > spm then st.cur_si = spm end
 
-  local sc = slot_starts[st.cur_mi] and slot_starts[st.cur_mi][st.cur_si]
+  local row = st.cur_str + 1 -- 1-indexed: row 1=ruler, rows 2..7=strings
+  local sc  = slot_starts[st.cur_mi] and slot_starts[st.cur_mi][st.cur_si]
   if sc then
-    -- nvim_win_set_cursor is 1-indexed row, 0-indexed col
     local ok, err = pcall(vim.api.nvim_win_set_cursor, 0, { row, sc - 1 })
     if not ok then
       vim.notify("fret: cursor error: " .. err, vim.log.levels.DEBUG)
     end
   end
+
+  update_highlights(bufnr)
 end
 
 -- ── cursor movement ───────────────────────────────────────────────────────────
@@ -269,6 +292,7 @@ local function open_after_prompt(time_sig, subdivision)
     cur_str = 1,
     pos_map = {},
     slot_starts = {},
+    slot_widths = {},
   }
 
   setup_keymaps(bufnr)

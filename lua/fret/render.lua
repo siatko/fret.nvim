@@ -153,11 +153,13 @@ function M.render(song)
 
   local slot_starts = build_slot_col_map()
 
-  for mi = 1, #song.measures do
-    local widths = measure_col_widths(song.measures[mi])
+  -- slot_widths[mi][si] = character width of that slot (for highlighting)
+  local slot_widths = {}
+  for mi, measure in ipairs(song.measures) do
+    slot_widths[mi] = measure_col_widths(measure)
     for si = 1, spm do
       local sc = slot_starts[mi][si]
-      local w  = widths[si]
+      local w  = slot_widths[mi][si]
       for str_idx = 1, n_strings do
         local row = str_idx + 1 -- +1 because row 1 is ruler
         for c = sc, sc + w - 1 do
@@ -167,7 +169,7 @@ function M.render(song)
     end
   end
 
-  return lines, pos_map, slot_starts
+  return lines, pos_map, slot_starts, slot_widths
 end
 
 return M
