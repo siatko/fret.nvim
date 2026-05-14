@@ -199,6 +199,16 @@ local function set_subdivision(bufnr)
   redraw(bufnr)
 end
 
+-- ── copy to clipboard ─────────────────────────────────────────────────────────
+
+local function copy_tab(bufnr)
+  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local text = table.concat(lines, "\n")
+  vim.fn.setreg("+", text)
+  vim.fn.setreg('"', text)
+  vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
+end
+
 -- ── buffer setup ──────────────────────────────────────────────────────────────
 
 local function setup_keymaps(bufnr)
@@ -218,6 +228,7 @@ local function setup_keymaps(bufnr)
   map(km.delete_measure, function() delete_measure(bufnr) end)
   map(km.set_timesig,    function() set_timesig(bufnr) end)
   map(km.set_subdiv,     function() set_subdivision(bufnr) end)
+  map(km.copy_tab,       function() copy_tab(bufnr) end)
 
   -- Digit keys trigger note entry
   for d = 0, 9 do
@@ -271,6 +282,10 @@ local function open_after_prompt(time_sig, subdivision)
   vim.api.nvim_buf_create_user_command(bufnr, "FretSubdiv", function()
     set_subdivision(bufnr)
   end, { desc = "Set subdivision" })
+
+  vim.api.nvim_buf_create_user_command(bufnr, "FretCopy", function()
+    copy_tab(bufnr)
+  end, { desc = "Copy tab to clipboard" })
 
   vim.api.nvim_create_autocmd("BufWipeout", {
     buffer = bufnr,

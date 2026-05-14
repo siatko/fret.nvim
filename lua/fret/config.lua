@@ -15,6 +15,7 @@ M.defaults = {
     delete_measure = "M",
     set_timesig    = "t",
     set_subdiv     = "s",
+    copy_tab       = "Y",
     new_tab        = "<leader>gt",
   },
 }

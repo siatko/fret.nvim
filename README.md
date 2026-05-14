@@ -74,10 +74,13 @@ Dots (`.`) are subdivision ticks between beats.
 | `M`      | Delete current measure        |
 | `t`      | Change time signature         |
 | `s`      | Change subdivision            |
+| `Y`      | Copy whole tab to clipboard   |
 
 **Entering a fret:** type the first digit; for two-digit frets (e.g. 12) keep typing, then press `<Enter>` or `<Space>` to confirm.
 
+**Workflow:** build the tab, press `Y` to copy it, then paste into a markdown file or anywhere else.
+
 ## Commands
 
-- `:FretNew` — open a new tab editor buffer
-- Inside the buffer: `:FretAddMeasure`, `:FretTimeSig`, `:FretSubdiv`
+- `:FretNew` — open a new tab editor (prompts for time sig and smallest note)
+- Inside the buffer: `:FretAddMeasure`, `:FretTimeSig`, `:FretSubdiv`, `:FretCopy`
