@@ -172,3 +172,7 @@ Everything can be changed afterwards with `T`, `U`, `G`, `O`, `t`, `s`.
 | `:FretSubtitle`      | Edit subtitle              |
 | `:FretTuning`        | Edit tuning                |
 | `:FretOrder`         | Edit section order         |
+
+## TODO
+
+- [ ] Frets 10+ shift the tab grid — the sheet table uses fixed-width columns sized for one digit, so double-digit fret numbers break alignment
