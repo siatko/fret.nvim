@@ -65,7 +65,7 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
   config = function()
     require("fret").setup({
       keymaps = {
-        new_tab = "<leader>gt",
+        new_tab = "<leader>gt",    -- g for guitar, t for tab, genius
       },
     })
   end,
