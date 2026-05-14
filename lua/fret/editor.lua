@@ -7,6 +7,7 @@ local config  = require("fret.config")
 
 -- State per buffer: keyed by bufnr
 local state = {}
+local tab_count = 0
 
 local STRINGS = { "e", "B", "G", "D", "A", "E" }
 
@@ -253,8 +254,9 @@ local SUBDIVISIONS = {
 local function open_after_prompt(time_sig, subdivision)
   local song = tab_mod.new({ time_sig = time_sig, subdivision = subdivision })
 
+  tab_count = tab_count + 1
   local bufnr = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_name(bufnr, "fret://tab")
+  vim.api.nvim_buf_set_name(bufnr, "fret://tab-" .. tab_count)
   vim.api.nvim_buf_set_option(bufnr, "filetype", "fret")
   vim.api.nvim_buf_set_option(bufnr, "buftype", "nofile")
   vim.api.nvim_buf_set_option(bufnr, "swapfile", false)
