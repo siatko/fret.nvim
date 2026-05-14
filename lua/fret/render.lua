@@ -65,11 +65,29 @@ function M.render(song)
   local ts       = song.time_sig.num .. "/" .. song.time_sig.den
   local prefix_w = math.max(max_str_len, #ts) + 1
 
-  local all_lines   = {}
+  local all_lines    = {}
   local section_rows = {}
-  local slot_starts = {}
-  local slot_widths = {}
-  local pos_map     = {}
+  local slot_starts  = {}
+  local slot_widths  = {}
+  local pos_map      = {}
+
+  -- ── song header block ───────────────────────────────────────────────────────
+  local has_header = false
+  if song.title and song.title ~= "" then
+    table.insert(all_lines, song.title)
+    has_header = true
+  end
+  if song.subtitle and song.subtitle ~= "" then
+    table.insert(all_lines, song.subtitle)
+    has_header = true
+  end
+  if song.order and song.order ~= "" then
+    table.insert(all_lines, "Order: " .. song.order)
+    has_header = true
+  end
+  if has_header then
+    table.insert(all_lines, "")  -- blank separator before sections
+  end
 
   for sec_idx, section in ipairs(song.sections) do
     -- ── header ──────────────────────────────────────────────────────────────

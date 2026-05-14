@@ -310,6 +310,38 @@ local function set_subdivision(bufnr)
   redraw(bufnr)
 end
 
+-- ── song metadata ────────────────────────────────────────────────────────────
+
+local function edit_title(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  vim.ui.input({ prompt = "Title: ", default = st.song.title or "" }, function(input)
+    if input == nil then return end
+    st.song.title = input ~= "" and input or nil
+    redraw(bufnr)
+  end)
+end
+
+local function edit_subtitle(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  vim.ui.input({ prompt = "Subtitle: ", default = st.song.subtitle or "" }, function(input)
+    if input == nil then return end
+    st.song.subtitle = input ~= "" and input or nil
+    redraw(bufnr)
+  end)
+end
+
+local function edit_order(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  vim.ui.input({ prompt = "Order (e.g. A A B C C): ", default = st.song.order or "" }, function(input)
+    if input == nil then return end
+    st.song.order = input ~= "" and input or nil
+    redraw(bufnr)
+  end)
+end
+
 -- ── copy to clipboard ─────────────────────────────────────────────────────────
 
 local function copy_tab(bufnr)
@@ -347,6 +379,9 @@ local function setup_keymaps(bufnr)
   map(km.repeat_end,     function() toggle_repeat_end(bufnr) end)
   map(km.next_section,   function() next_section(bufnr) end)
   map(km.prev_section,   function() prev_section(bufnr) end)
+  map(km.edit_title,     function() edit_title(bufnr) end)
+  map(km.edit_subtitle,  function() edit_subtitle(bufnr) end)
+  map(km.edit_order,     function() edit_order(bufnr) end)
 
   for d = 0, 9 do
     local digit = tostring(d)
@@ -396,6 +431,9 @@ local function open_with_song(song)
     FretAddSection    = function() add_section(bufnr) end,
     FretDeleteSection = function() delete_section(bufnr) end,
     FretRenameSection = function() rename_section(bufnr) end,
+    FretTitle         = function() edit_title(bufnr) end,
+    FretSubtitle      = function() edit_subtitle(bufnr) end,
+    FretOrder         = function() edit_order(bufnr) end,
   }
   for name, fn in pairs(cmds) do
     vim.api.nvim_buf_create_user_command(bufnr, name, fn, {})
@@ -417,36 +455,54 @@ function M.open(opts)
     return
   end
 
-  local ts_items = vim.list_extend(vim.deepcopy(TIME_SIGS), { "Custom…" })
-  vim.ui.select(ts_items, { prompt = "Time signature:" }, function(choice)
-    if not choice then return end
+  -- Step 1: title (optional, <Enter> to skip)
+  vim.ui.input({ prompt = "Title (optional): " }, function(title)
+    if title == nil then return end  -- ESC = cancel entirely
 
-    local function proceed(ts_str)
-      local num, den = ts_str:match("^(%d+)/(%d+)$")
-      num, den = tonumber(num), tonumber(den)
-      if not num or not den or den == 0 then
-        vim.notify("fret: invalid time signature", vim.log.levels.WARN)
-        return
-      end
-      local subdiv_labels = {}
-      for _, s in ipairs(SUBDIVISIONS) do table.insert(subdiv_labels, s.label) end
-      vim.ui.select(subdiv_labels, { prompt = "Smallest note:" }, function(subdiv_choice)
-        if not subdiv_choice then return end
-        local subdivision = 1
-        for _, s in ipairs(SUBDIVISIONS) do
-          if s.label == subdiv_choice then subdivision = s.value; break end
+    -- Step 2: subtitle (optional)
+    vim.ui.input({ prompt = "Subtitle (optional): " }, function(subtitle)
+      if subtitle == nil then return end
+
+      -- Step 3: time signature
+      local ts_items = vim.list_extend(vim.deepcopy(TIME_SIGS), { "Custom…" })
+      vim.ui.select(ts_items, { prompt = "Time signature:" }, function(choice)
+        if not choice then return end
+
+        local function proceed(ts_str)
+          local num, den = ts_str:match("^(%d+)/(%d+)$")
+          num, den = tonumber(num), tonumber(den)
+          if not num or not den or den == 0 then
+            vim.notify("fret: invalid time signature", vim.log.levels.WARN)
+            return
+          end
+
+          -- Step 4: smallest note
+          local subdiv_labels = {}
+          for _, s in ipairs(SUBDIVISIONS) do table.insert(subdiv_labels, s.label) end
+          vim.ui.select(subdiv_labels, { prompt = "Smallest note:" }, function(subdiv_choice)
+            if not subdiv_choice then return end
+            local subdivision = 1
+            for _, s in ipairs(SUBDIVISIONS) do
+              if s.label == subdiv_choice then subdivision = s.value; break end
+            end
+            open_with_song(tab_mod.new({
+              title       = title,
+              subtitle    = subtitle,
+              time_sig    = { num = num, den = den },
+              subdivision = subdivision,
+            }))
+          end)
         end
-        open_with_song(tab_mod.new({ time_sig = { num = num, den = den }, subdivision = subdivision }))
-      end)
-    end
 
-    if choice == "Custom…" then
-      vim.ui.input({ prompt = "Time signature (e.g. 5/4): " }, function(input)
-        if input and input ~= "" then proceed(input) end
+        if choice == "Custom…" then
+          vim.ui.input({ prompt = "Time signature (e.g. 5/4): " }, function(input)
+            if input and input ~= "" then proceed(input) end
+          end)
+        else
+          proceed(choice)
+        end
       end)
-    else
-      proceed(choice)
-    end
+    end)
   end)
 end
 

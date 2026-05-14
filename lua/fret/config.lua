@@ -22,6 +22,9 @@ M.defaults = {
     repeat_end     = "]",
     next_section   = "}",
     prev_section   = "{",
+    edit_title     = "T",
+    edit_subtitle  = "U",
+    edit_order     = "O",
     new_tab        = "<leader>gt",
   },
 }

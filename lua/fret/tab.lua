@@ -23,6 +23,9 @@ function M.new(opts)
   local subdivision = opts.subdivision or 4
   local spm         = num * subdivision
   return {
+    title       = (opts.title    ~= "" and opts.title)    or nil,
+    subtitle    = (opts.subtitle ~= "" and opts.subtitle) or nil,
+    order       = (opts.order    ~= "" and opts.order)    or nil,
     time_sig    = { num = num, den = den },
     subdivision = subdivision,
     sections    = { new_section(spm) },

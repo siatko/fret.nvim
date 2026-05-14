@@ -85,23 +85,34 @@ describe("render", function()
   local config = require("fret.config")
   config.setup({})
 
-  it("produces header + ruler + 6 string lines for one section", function()
+  it("produces header + ruler + 6 string lines for one section (no title)", function()
     local song = tab.new({ time_sig = { num = 4, den = 4 }, subdivision = 1 })
     local lines = render.render(song)
-    assert.equals(8, #lines) -- 1 header + 1 ruler + 6 strings
+    assert.equals(8, #lines) -- 1 section-header + 1 ruler + 6 strings
+  end)
+
+  it("prepends title/subtitle/order and a blank line", function()
+    local song = tab.new({ title = "My Song", subtitle = "Guitar Tab", order = "A B A" })
+    local lines = render.render(song)
+    -- 3 header lines + 1 blank + 8 section lines = 12
+    assert.equals(12, #lines)
+    assert.equals("My Song",    lines[1])
+    assert.equals("Guitar Tab", lines[2])
+    assert.equals("Order: A B A", lines[3])
+    assert.equals("",           lines[4])
   end)
 
   it("ruler contains the time signature", function()
     local song = tab.new({ time_sig = { num = 3, den = 4 }, subdivision = 1 })
     local lines = render.render(song)
-    assert.truthy(lines[2]:match("^3/4")) -- ruler is line 2 (after header)
+    assert.truthy(lines[2]:match("^3/4")) -- ruler is line 2 (after section header)
   end)
 
   it("reflects a placed note in the rendered output", function()
     local song = tab.new({ time_sig = { num = 4, den = 4 }, subdivision = 1 })
     tab.set_note(song, 1, 1, 1, 1, 12) -- sec 1, meas 1, slot 1, string e, fret 12
     local lines = render.render(song)
-    assert.truthy(lines[3]:match("12")) -- string e is line 3 (header + ruler + e)
+    assert.truthy(lines[3]:match("12")) -- string e is line 3 (section-header + ruler + e)
   end)
 
   it("two sections produce correct line count", function()
