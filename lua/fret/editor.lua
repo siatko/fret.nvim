@@ -33,9 +33,12 @@ local function update_highlights(bufnr)
   local col_s = sc - 1 -- 0-indexed
   local col_e = sc - 1 + w
 
+  -- Highlight the beat ruler (row 0, 0-indexed)
+  vim.api.nvim_buf_add_highlight(bufnr, ns, "FretCursorCol", 0, col_s, col_e)
+
   -- Highlight the whole slot column across all string rows (rows 2..n+1, 0-indexed 1..n)
   for str_idx = 1, n_strings do
-    local row0 = str_idx + 1 - 1 -- 0-indexed buffer row
+    local row0 = str_idx -- 0-indexed: string rows are 1..n
     local hl = (str_idx == st.cur_str) and "FretCursorCell" or "FretCursorCol"
     vim.api.nvim_buf_add_highlight(bufnr, ns, hl, row0, col_s, col_e)
   end
