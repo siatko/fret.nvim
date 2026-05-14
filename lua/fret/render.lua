@@ -19,10 +19,18 @@ local function fmt_fret(fret, width)
   return s .. string.rep("-", width - #s)
 end
 
-local function measure_col_widths(measure)
+local function beat_label(slot_idx, subdivision)
+  local beat_num = math.ceil(slot_idx / subdivision)
+  local sub_pos  = (slot_idx - 1) % subdivision + 1
+  return sub_pos == 1 and tostring(beat_num) or "."
+end
+
+local function measure_col_widths(measure, spm, subdivision)
   local widths = {}
-  for si, slot in ipairs(measure.slots) do
-    local w = 1
+  for si = 1, spm do
+    local slot = measure.slots[si] or {}
+    -- minimum width must fit the beat label (e.g. "10" is 2 chars wide)
+    local w = #beat_label(si, subdivision)
     for _, fret in pairs(slot) do
       local d = #tostring(fret)
       if d > w then w = d end
@@ -30,12 +38,6 @@ local function measure_col_widths(measure)
     widths[si] = w
   end
   return widths
-end
-
-local function beat_label(slot_idx, subdivision)
-  local beat_num = math.ceil(slot_idx / subdivision)
-  local sub_pos  = (slot_idx - 1) % subdivision + 1
-  return sub_pos == 1 and tostring(beat_num) or "."
 end
 
 local function lpad(s, w)
@@ -109,7 +111,7 @@ function M.render(song)
     local col = prefix_w + 2
 
     for mi, measure in ipairs(section.measures) do
-      local widths = measure_col_widths(measure)
+      local widths = measure_col_widths(measure, spm, subdivision)
       slot_starts[sec_idx][mi] = {}
       slot_widths[sec_idx][mi] = {}
 
