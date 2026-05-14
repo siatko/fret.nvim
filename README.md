@@ -124,6 +124,7 @@ Press `?` inside the editor to show this as a popup.
 |-----|---------------------|
 | `T` | Edit title          |
 | `U` | Edit subtitle       |
+| `G` | Edit tuning         |
 | `O` | Edit section order  |
 
 **Other**
@@ -141,10 +142,11 @@ Four prompts, all optional (just hit `<Enter>` to skip any of them):
 
 1. **Title** — e.g. `Eruption`
 2. **Subtitle** — e.g. `Van Halen`
-3. **Time signature** — pick from presets or type a custom one
-4. **Smallest note** — 4th / 8th / 16th / 32nd
+3. **Tuning** — e.g. `Standard`, `Drop D`, `Open G`
+4. **Time signature** — pick from presets or type a custom one
+5. **Smallest note** — 4th / 8th / 16th / 32nd
 
-Everything can be changed afterwards with `T`, `U`, `O`, `t`, `s`.
+Everything can be changed afterwards with `T`, `U`, `G`, `O`, `t`, `s`.
 
 ## Section header format
 
@@ -169,4 +171,5 @@ Everything can be changed afterwards with `T`, `U`, `O`, `t`, `s`.
 | `:FretRenameSection` | Rename current section     |
 | `:FretTitle`         | Edit title                 |
 | `:FretSubtitle`      | Edit subtitle              |
+| `:FretTuning`        | Edit tuning                |
 | `:FretOrder`         | Edit section order         |

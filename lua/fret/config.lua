@@ -24,6 +24,7 @@ M.defaults = {
     prev_section   = "<C-k>",
     edit_title     = "T",
     edit_subtitle  = "U",
+    edit_tuning    = "G",
     edit_order     = "O",
     help           = "?",
     new_tab        = "<leader>gt",

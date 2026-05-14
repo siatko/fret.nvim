@@ -83,6 +83,10 @@ function M.render(song)
     table.insert(all_lines, song.subtitle)
     has_header = true
   end
+  if song.tuning and song.tuning ~= "" then
+    table.insert(all_lines, "Tuning: " .. song.tuning)
+    has_header = true
+  end
   if song.order and song.order ~= "" then
     table.insert(all_lines, "Order: " .. song.order)
     has_header = true

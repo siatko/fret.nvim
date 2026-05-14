@@ -25,6 +25,7 @@ function M.new(opts)
   return {
     title       = (opts.title    ~= "" and opts.title)    or nil,
     subtitle    = (opts.subtitle ~= "" and opts.subtitle) or nil,
+    tuning      = (opts.tuning   ~= "" and opts.tuning)   or nil,
     order       = (opts.order    ~= "" and opts.order)    or nil,
     time_sig    = { num = num, den = den },
     subdivision = subdivision,

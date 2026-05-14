@@ -332,6 +332,16 @@ local function edit_subtitle(bufnr)
   end)
 end
 
+local function edit_tuning(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  vim.ui.input({ prompt = "Tuning (e.g. Standard, Drop D): ", default = st.song.tuning or "" }, function(input)
+    if input == nil then return end
+    st.song.tuning = input ~= "" and input or nil
+    redraw(bufnr)
+  end)
+end
+
 local function edit_order(bufnr)
   local st = get_state(bufnr)
   if not st then return end
@@ -382,6 +392,7 @@ local function show_help()
     "  Song metadata",
     ("  %-12s  edit title"):format(km.edit_title),
     ("  %-12s  edit subtitle"):format(km.edit_subtitle),
+    ("  %-12s  edit tuning"):format(km.edit_tuning),
     ("  %-12s  edit section order"):format(km.edit_order),
     "",
     "  Other",
@@ -468,6 +479,7 @@ local function setup_keymaps(bufnr)
   map(km.prev_section,   function() prev_section(bufnr) end)
   map(km.edit_title,     function() edit_title(bufnr) end)
   map(km.edit_subtitle,  function() edit_subtitle(bufnr) end)
+  map(km.edit_tuning,    function() edit_tuning(bufnr) end)
   map(km.edit_order,     function() edit_order(bufnr) end)
   map(km.help,           function() show_help() end)
 
@@ -521,6 +533,7 @@ local function open_with_song(song)
     FretRenameSection = function() rename_section(bufnr) end,
     FretTitle         = function() edit_title(bufnr) end,
     FretSubtitle      = function() edit_subtitle(bufnr) end,
+    FretTuning        = function() edit_tuning(bufnr) end,
     FretOrder         = function() edit_order(bufnr) end,
   }
   for name, fn in pairs(cmds) do
@@ -551,7 +564,11 @@ function M.open(opts)
     vim.ui.input({ prompt = "Subtitle (optional): " }, function(subtitle)
       if subtitle == nil then return end
 
-      -- Step 3: time signature
+      -- Step 3: tuning (optional)
+      vim.ui.input({ prompt = "Tuning (optional, e.g. Standard, Drop D): " }, function(tuning)
+        if tuning == nil then return end
+
+      -- Step 4: time signature
       local ts_items = vim.list_extend(vim.deepcopy(TIME_SIGS), { "Custom…" })
       vim.ui.select(ts_items, { prompt = "Time signature:" }, function(choice)
         if not choice then return end
@@ -576,6 +593,7 @@ function M.open(opts)
             open_with_song(tab_mod.new({
               title       = title,
               subtitle    = subtitle,
+              tuning      = tuning,
               time_sig    = { num = num, den = den },
               subdivision = subdivision,
             }))
@@ -590,6 +608,7 @@ function M.open(opts)
           proceed(choice)
         end
       end)
+      end)  -- tuning
     end)
   end)
 end
