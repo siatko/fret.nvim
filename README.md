@@ -221,7 +221,7 @@ These are active everywhere, not just inside the editor:
 - [ ] Muted/dead notes (`x`) — currently `x` clears a note; it could instead write a muted marker so that the rendered tab shows `x` in the cell rather than `-`
 - [ ] BPM / tempo — store a tempo field and display it in the header (e.g. `♩ = 120`) so exported tabs carry timing intent
 - [ ] Capo — a single header field (`Capo: 2`) that renders above the first section; fret numbers stay relative to the capo
-- [ ] Bar numbers — print a small measure counter above the ruler so readers can navigate long tabs without counting bars by hand
+- [x] Bar numbers — print a small measure counter above the ruler so readers can navigate long tabs without counting bars by hand
 - [ ] Harmonics — natural harmonics `<12>` and artificial harmonics `{12}` use a different cell format; requires a note-type flag alongside the fret number
 - [ ] Bends — `7b9` (bend from fret 7 up to the pitch of 9), `br` (bend and release), pre-bends; a decorated note rather than a separate slot, but requires storing a target pitch and bend type alongside the fret number
 - [ ] Vibrato (`~`) — simpler than bends since it's just a flag on a note with no second pitch; changes how the cell renders but doesn't affect column width or neighbours

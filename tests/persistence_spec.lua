@@ -230,6 +230,13 @@ describe("persistence", function()
       assert.equals(1, vim.fn.filereadable(dir .. "/New Name.fret"))
     end)
 
+    it("sanitizes special characters in the title when deriving the filename", function()
+      -- title_to_filename replaces /\:*?"<>| with _
+      editor.open({ song = tab.new({ title = "A/B:C*D", time_sig = { num = 4, den = 4 }, subdivision = 1 }) })
+      vim.cmd("FretSave")
+      assert.equals(1, vim.fn.filereadable(dir .. "/A_B_C_D.fret"))
+    end)
+
     it("does not prompt when saving back to the file it was opened from", function()
       local song = tab.new({ title = "Own", time_sig = { num = 4, den = 4 }, subdivision = 1 })
       write_fret(dir .. "/Own.fret", song)

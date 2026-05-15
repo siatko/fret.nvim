@@ -74,6 +74,20 @@ describe("editor", function()
         assert.truthy(text:find(s, 1, true), "missing string label: " .. s)
       end
     end)
+
+    it("buffer contains a bar numbers line immediately above the ruler", function()
+      open_test_song()
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+      local ruler_row
+      for i, l in ipairs(lines) do
+        if l:match("^4/4") then ruler_row = i; break end
+      end
+      assert.truthy(ruler_row, "ruler line not found in buffer")
+      local bar_line = lines[ruler_row - 1]
+      assert.truthy(bar_line,                     "no line before ruler")
+      assert.truthy(bar_line:find("1", 1, true),  "bar number '1' missing from bar line")
+      assert.falsy(bar_line:match("^%d+/%d+"),    "bar line must not look like the ruler")
+    end)
   end)
 
   -- ── keymaps ───────────────────────────────────────────────────────────────
@@ -177,6 +191,21 @@ describe("editor", function()
       vim.cmd("FretSubdiv")
       vim.ui.input = orig_input
       assert.is_true(editor._get_state(bufnr).dirty)
+    end)
+
+    it("rejects an invalid subdivision (zero or less)", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local warned = false
+      local orig_input  = vim.ui.input
+      local orig_notify = vim.notify
+      vim.ui.input = function(_, cb) cb("0") end
+      vim.notify   = function(_, lvl) if lvl == vim.log.levels.WARN then warned = true end end
+      vim.cmd("FretSubdiv")
+      vim.ui.input = orig_input
+      vim.notify   = orig_notify
+      assert.truthy(warned)
+      assert.equals(1, editor._get_state(bufnr).song.subdivision)
     end)
   end)
 
