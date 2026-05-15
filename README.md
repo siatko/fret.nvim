@@ -34,6 +34,7 @@
 - Song title, subtitle and section order (`A A B A C B A` — classic)
 - Column + cell highlight so you always know where your cursor went
 - Press `?` for a help popup — no more alt-tabbing to the README mid-riff
+- Tabs are saved as `.fret` JSON files and can be reopened with `:FretOpen`
 
 ## What it looks like
 
@@ -75,11 +76,13 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
 
 ## Workflow
 
-1. `<leader>gt` or `:FretNew` — answer four quick prompts (title, subtitle, time sig, smallest note)
+1. `<leader>gt` or `:FretNew` — enter a title (required), then subtitle, time sig, smallest note
 2. Write your riff with hjkl + digit keys
 3. Add sections with `a`, name them with `r`, add repeats with `[` and `]`
-4. Press `Y` to yank the whole thing to the clipboard
-5. Paste into your markdown/txt/wherever — done
+4. Press `Y` to copy to clipboard — the tab is also saved to `fret_dir/<title>.fret`
+5. Paste into your markdown/notes/wherever — the code block keeps it monospaced
+6. Press `q` to quit (prompts to save if there are unsaved changes)
+7. Come back later with `:FretOpen` — pick a saved tab and it reopens in the editor
 
 ## Keymaps
 
@@ -132,14 +135,15 @@ Press `?` inside the editor to show this as a popup.
 |-----|---------------------------|
 | `t` | Change time signature     |
 | `s` | Change subdivision        |
-| `Y` | Copy entire tab to clipboard |
-| `?` | Show keybinding help popup |
+| `Y` | Copy tab to clipboard and save to disk |
+| `q` | Quit (prompts if unsaved changes)      |
+| `?` | Show keybinding help popup             |
 
 ## On open
 
-Four prompts, all optional (just hit `<Enter>` to skip any of them):
+Five prompts — title is required, the rest are optional (`<Enter>` to skip):
 
-1. **Title** — e.g. `Eruption`
+1. **Title** — required; used as the filename when saving (`my-riff.fret`)
 2. **Subtitle** — e.g. `Van Halen`
 3. **Tuning** — e.g. `Standard`, `Drop D`, `Open G`
 4. **Time signature** — pick from presets or type a custom one
@@ -158,20 +162,33 @@ Everything can be changed afterwards with `T`, `U`, `G`, `O`, `t`, `s`.
 
 ## Commands
 
-| Command              | Action                     |
-|----------------------|----------------------------|
-| `:FretNew`           | Open a new tab editor      |
-| `:FretAddMeasure`    | Add a measure              |
-| `:FretTimeSig`       | Change time signature      |
-| `:FretSubdiv`        | Change subdivision         |
-| `:FretCopy`          | Copy tab to clipboard      |
-| `:FretAddSection`    | Add section below current  |
-| `:FretDeleteSection` | Delete current section     |
-| `:FretRenameSection` | Rename current section     |
-| `:FretTitle`         | Edit title                 |
-| `:FretSubtitle`      | Edit subtitle              |
-| `:FretTuning`        | Edit tuning                |
-| `:FretOrder`         | Edit section order         |
+| Command              | Action                                      |
+|----------------------|---------------------------------------------|
+| `:FretNew`           | Open a new tab editor                       |
+| `:FretOpen [path]`   | Pick a saved tab to reopen (or open a path) |
+| `:FretCopy`          | Copy tab to clipboard and save              |
+| `:FretAddMeasure`    | Add a measure                               |
+| `:FretTimeSig`       | Change time signature                       |
+| `:FretSubdiv`        | Change subdivision                          |
+| `:FretAddSection`    | Add section below current                   |
+| `:FretDeleteSection` | Delete current section                      |
+| `:FretRenameSection` | Rename current section                      |
+| `:FretTitle`         | Edit title                                  |
+| `:FretSubtitle`      | Edit subtitle                               |
+| `:FretTuning`        | Edit tuning                                 |
+| `:FretOrder`         | Edit section order                          |
+
+## Files
+
+Tabs are saved as JSON in `fret_dir` (default `~/frets`, configurable):
+
+```lua
+require("fret").setup({
+  fret_dir = vim.fn.expand("~/Documents/fret"),
+})
+```
+
+The filename is derived from the title (`My Song.fret`). Saving happens automatically when you press `Y`. Use `:FretOpen` to browse and reopen saved tabs.
 
 ## TODO
 

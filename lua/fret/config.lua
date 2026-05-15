@@ -16,6 +16,7 @@ M.defaults = {
     set_timesig    = "t",
     set_subdiv     = "s",
     copy_tab       = "Y",
+    quit           = "q",
     add_section    = "a",
     delete_section = "D",
     rename_section = "r",

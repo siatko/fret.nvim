@@ -13,6 +13,11 @@ local ns        = vim.api.nvim_create_namespace("fret_cursor")
 
 local function get_state(bufnr) return state[bufnr] end
 
+local function mark_dirty(bufnr)
+  local st = get_state(bufnr)
+  if st then st.dirty = true end
+end
+
 local function cur_section(st)
   return st.song.sections[st.cur_sec]
 end
@@ -174,6 +179,7 @@ local function enter_note(bufnr, first_digit)
   local fret = tonumber(digits)
   if fret then
     tab_mod.set_note(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str, fret)
+    mark_dirty(bufnr)
   end
   vim.api.nvim_echo({ { "", "Normal" } }, false, {})
   redraw(bufnr)
@@ -183,6 +189,7 @@ local function clear_note(bufnr)
   local st = get_state(bufnr)
   if not st then return end
   tab_mod.set_note(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str, nil)
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -194,6 +201,7 @@ local function add_measure(bufnr)
   tab_mod.add_measure(st.song, st.cur_sec)
   st.cur_mi = #cur_section(st).measures
   st.cur_si = 1
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -204,6 +212,7 @@ local function delete_measure(bufnr)
   if st.cur_mi > #cur_section(st).measures then
     st.cur_mi = #cur_section(st).measures
   end
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -216,6 +225,7 @@ local function add_section(bufnr)
   st.cur_sec = st.cur_sec + 1
   st.cur_mi  = 1
   st.cur_si  = 1
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -228,6 +238,7 @@ local function delete_section(bufnr)
   end
   st.cur_mi = 1
   st.cur_si = 1
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -238,6 +249,7 @@ local function rename_section(bufnr)
   vim.ui.input({ prompt = "Section name (empty to clear): ", default = current }, function(input)
     if input == nil then return end
     tab_mod.set_section_name(st.song, st.cur_sec, input)
+    mark_dirty(bufnr)
     redraw(bufnr)
   end)
 end
@@ -268,6 +280,7 @@ local function toggle_repeat_start(bufnr)
   local st = get_state(bufnr)
   if not st then return end
   tab_mod.toggle_repeat_start(st.song, st.cur_sec)
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -275,6 +288,7 @@ local function toggle_repeat_end(bufnr)
   local st = get_state(bufnr)
   if not st then return end
   tab_mod.toggle_repeat_end(st.song, st.cur_sec)
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -293,6 +307,7 @@ local function set_timesig(bufnr)
   end
   tab_mod.set_time_sig(st.song, num, den)
   st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -307,6 +322,7 @@ local function set_subdivision(bufnr)
   end
   tab_mod.set_subdivision(st.song, n)
   st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
+  mark_dirty(bufnr)
   redraw(bufnr)
 end
 
@@ -318,6 +334,7 @@ local function edit_title(bufnr)
   vim.ui.input({ prompt = "Title: ", default = st.song.title or "" }, function(input)
     if input == nil then return end
     st.song.title = input ~= "" and input or nil
+    mark_dirty(bufnr)
     redraw(bufnr)
   end)
 end
@@ -328,6 +345,7 @@ local function edit_subtitle(bufnr)
   vim.ui.input({ prompt = "Subtitle: ", default = st.song.subtitle or "" }, function(input)
     if input == nil then return end
     st.song.subtitle = input ~= "" and input or nil
+    mark_dirty(bufnr)
     redraw(bufnr)
   end)
 end
@@ -338,6 +356,7 @@ local function edit_tuning(bufnr)
   vim.ui.input({ prompt = "Tuning (e.g. Standard, Drop D): ", default = st.song.tuning or "" }, function(input)
     if input == nil then return end
     st.song.tuning = input ~= "" and input or nil
+    mark_dirty(bufnr)
     redraw(bufnr)
   end)
 end
@@ -348,6 +367,7 @@ local function edit_order(bufnr)
   vim.ui.input({ prompt = "Order (e.g. A A B C C): ", default = st.song.order or "" }, function(input)
     if input == nil then return end
     st.song.order = input ~= "" and input or nil
+    mark_dirty(bufnr)
     redraw(bufnr)
   end)
 end
@@ -376,7 +396,34 @@ local function save_tab(bufnr)
   end
   f:write(json)
   f:close()
+  st.dirty = false
   return true, path
+end
+
+-- ── quit ─────────────────────────────────────────────────────────────────────
+
+local function quit_editor(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  if not st.dirty then
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+    return
+  end
+  vim.ui.select(
+    { "Save and quit", "Quit without saving", "Cancel" },
+    { prompt = "Unsaved changes:" },
+    function(choice)
+      if choice == "Save and quit" then
+        local saved, path = save_tab(bufnr)
+        if saved then
+          vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+      elseif choice == "Quit without saving" then
+        vim.api.nvim_buf_delete(bufnr, { force = true })
+      end
+    end
+  )
 end
 
 -- ── copy to clipboard ─────────────────────────────────────────────────────────
@@ -430,8 +477,13 @@ local function show_help()
     "  Other",
     ("  %-12s  change time signature"):format(km.set_timesig),
     ("  %-12s  change subdivision"):format(km.set_subdiv),
-    ("  %-12s  copy tab to clipboard"):format(km.copy_tab),
+    ("  %-12s  copy & save tab"):format(km.copy_tab),
+    ("  %-12s  quit (prompts if unsaved)"):format(km.quit),
     ("  %-12s  show this help"):format(km.help),
+    "",
+    "  Commands",
+    "  :FretNew        open a new tab",
+    "  :FretOpen       pick a saved tab to reopen",
     "",
     "  press q or <Esc> to close",
   }
@@ -502,6 +554,7 @@ local function setup_keymaps(bufnr)
   map(km.set_timesig,    function() set_timesig(bufnr) end)
   map(km.set_subdiv,     function() set_subdivision(bufnr) end)
   map(km.copy_tab,       function() copy_tab(bufnr) end)
+  map(km.quit,           function() quit_editor(bufnr) end)
   map(km.add_section,    function() add_section(bufnr) end)
   map(km.delete_section, function() delete_section(bufnr) end)
   map(km.rename_section, function() rename_section(bufnr) end)
@@ -546,6 +599,7 @@ local function open_with_song(song)
     cur_mi       = 1,
     cur_si       = 1,
     cur_str      = 1,
+    dirty        = false,
     pos_map      = {},
     slot_starts  = {},
     slot_widths  = {},
