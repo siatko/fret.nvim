@@ -140,6 +140,7 @@ Press `?` inside the editor to show this as a popup.
 |-----|---------------------------|
 | `t` | Change time signature     |
 | `s` | Change subdivision        |
+| `<leader>gf` | Find and open a saved tab (Telescope) |
 | `Y` | Copy tab to clipboard and save to disk |
 | `W` | Save tab to disk                       |
 | `q` | Quit (prompts if unsaved changes)      |
