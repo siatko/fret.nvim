@@ -16,7 +16,7 @@ local STRINGS = { "e", "B", "G", "D", "A", "E" }
 local function fmt_fret(fret, width)
   if fret == nil then return string.rep("-", width) end
   local s = tostring(fret)
-  return s .. string.rep("-", width - #s)
+  return string.rep(" ", width - #s) .. s
 end
 
 local function beat_label(slot_idx, subdivision)

@@ -235,6 +235,23 @@ describe("render", function()
     assert.equals(3, bars)
   end)
 
+  it("double-digit fret renders without dashes after the digits", function()
+    local song = tab.new({ time_sig = { num = 4, den = 4 }, subdivision = 1 })
+    tab.set_note(song, 1, 1, 1, 1, 12)
+    local lines = render.render(song)
+    assert.truthy(lines[3]:find("12", 1, true))
+    assert.falsy(lines[3]:find("12-", 1, true))
+  end)
+
+  it("single-digit fret in a widened slot is space-padded, not dash-padded", function()
+    local song = tab.new({ time_sig = { num = 4, den = 4 }, subdivision = 1 })
+    tab.set_note(song, 1, 1, 1, 1, 12)  -- e: forces slot width = 2
+    tab.set_note(song, 1, 1, 1, 2, 5)   -- B: fret 5 in a 2-wide slot
+    local lines = render.render(song)
+    assert.truthy(lines[4]:find(" 5", 1, true))
+    assert.falsy(lines[4]:find("5-", 1, true))
+  end)
+
   it("two sections produce correct line count with blank separator", function()
     local song = tab.new({ time_sig = { num = 4, den = 4 }, subdivision = 1 })
     tab.add_section(song)

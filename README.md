@@ -208,5 +208,10 @@ These are active everywhere, not just inside the editor:
 
 ## TODO
 
-- [ ] Frets 10+ shift the tab grid — the sheet table uses fixed-width columns sized for one digit, so double-digit fret numbers break alignment
-- [ ] Technique markers between notes (hammer-on `h`, pull-off `p`, slide `/` `\`) — requires extending the slot data model to store a connection type, then rendering the filler character between two connected notes accordingly
+**Technique markers** (hammer-on `h`, pull-off `p`, slide `/` `\`) are the biggest missing piece compared to real tabs. They are not standalone notes — they are connections *between* two notes. That makes them structurally different from what's here: each slot would need to carry a `connect_out` field (e.g. `"h"`, `"p"`, `"/"`) pointing toward the next slot, and the renderer would have to substitute that character for the space filler it currently puts between the two slots. Until then, you can annotate them by hand after copying with `Y`.
+
+- [ ] Muted/dead notes (`x`) — currently `x` clears a note; it could instead write a muted marker so that the rendered tab shows `x` in the cell rather than `-`
+- [ ] BPM / tempo — store a tempo field and display it in the header (e.g. `♩ = 120`) so exported tabs carry timing intent
+- [ ] Capo — a single header field (`Capo: 2`) that renders above the first section; fret numbers stay relative to the capo
+- [ ] Bar numbers — print a small measure counter above the ruler so readers can navigate long tabs without counting bars by hand
+- [ ] Harmonics — natural harmonics `<12>` and artificial harmonics `{12}` use a different cell format; requires a note-type flag alongside the fret number
