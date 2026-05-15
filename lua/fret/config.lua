@@ -4,6 +4,7 @@ M.defaults = {
   subdivision = 4,
   time_sig    = { num = 4, den = 4 },
   strings     = { "e", "B", "G", "D", "A", "E" },
+  fret_dir    = vim.fn.expand("~/frets"),
   keymaps = {
     move_left      = "h",
     move_right     = "l",

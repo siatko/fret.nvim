@@ -352,6 +352,33 @@ local function edit_order(bufnr)
   end)
 end
 
+-- ── save to disk ─────────────────────────────────────────────────────────────
+
+local function title_to_filename(title)
+  return title:gsub('[/\\:*?"<>|]', "_") .. ".fret"
+end
+
+local function save_tab(bufnr)
+  local st = get_state(bufnr)
+  if not st or not st.song.title then return false end
+  local dir = vim.fn.expand(config.options.fret_dir or "~/frets")
+  vim.fn.mkdir(dir, "p")
+  local path = dir .. "/" .. title_to_filename(st.song.title)
+  local ok, json = pcall(vim.json.encode, st.song)
+  if not ok then
+    vim.notify("fret: failed to encode tab", vim.log.levels.ERROR)
+    return false
+  end
+  local f = io.open(path, "w")
+  if not f then
+    vim.notify("fret: could not write " .. path, vim.log.levels.ERROR)
+    return false
+  end
+  f:write(json)
+  f:close()
+  return true, path
+end
+
 -- ── copy to clipboard ─────────────────────────────────────────────────────────
 
 local function copy_tab(bufnr)
@@ -359,7 +386,12 @@ local function copy_tab(bufnr)
   local text  = "```fret\n" .. table.concat(lines, "\n") .. "\n```"
   vim.fn.setreg("+", text)
   vim.fn.setreg('"', text)
-  vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
+  local saved, path = save_tab(bufnr)
+  if saved then
+    vim.notify("fret: copied and saved to " .. path, vim.log.levels.INFO)
+  else
+    vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
+  end
 end
 
 -- ── help popup ───────────────────────────────────────────────────────────────
@@ -556,9 +588,12 @@ function M.open(opts)
     return
   end
 
-  -- Step 1: title (optional, <Enter> to skip)
-  vim.ui.input({ prompt = "Title (optional): " }, function(title)
-    if title == nil then return end  -- ESC = cancel entirely
+  -- Step 1: title (required)
+  vim.ui.input({ prompt = "Title (required): " }, function(title)
+    if title == nil or title == "" then
+      if title == "" then vim.notify("fret: title is required", vim.log.levels.WARN) end
+      return
+    end
 
     -- Step 2: subtitle (optional)
     vim.ui.input({ prompt = "Subtitle (optional): " }, function(subtitle)
@@ -611,6 +646,22 @@ function M.open(opts)
       end)  -- tuning
     end)
   end)
+end
+
+function M.open_file(path)
+  local f = io.open(path, "r")
+  if not f then
+    vim.notify("fret: cannot open " .. path, vim.log.levels.ERROR)
+    return
+  end
+  local content = f:read("*a")
+  f:close()
+  local ok, song = pcall(vim.json.decode, content)
+  if not ok or type(song) ~= "table" then
+    vim.notify("fret: invalid fret file: " .. path, vim.log.levels.ERROR)
+    return
+  end
+  open_with_song(song)
 end
 
 return M
