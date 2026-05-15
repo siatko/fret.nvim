@@ -215,3 +215,8 @@ These are active everywhere, not just inside the editor:
 - [ ] Capo — a single header field (`Capo: 2`) that renders above the first section; fret numbers stay relative to the capo
 - [ ] Bar numbers — print a small measure counter above the ruler so readers can navigate long tabs without counting bars by hand
 - [ ] Harmonics — natural harmonics `<12>` and artificial harmonics `{12}` use a different cell format; requires a note-type flag alongside the fret number
+- [ ] Bends — `7b9` (bend from fret 7 up to the pitch of 9), `br` (bend and release), pre-bends; a decorated note rather than a separate slot, but requires storing a target pitch and bend type alongside the fret number
+- [ ] Vibrato (`~`) — simpler than bends since it's just a flag on a note with no second pitch; changes how the cell renders but doesn't affect column width or neighbours
+- [ ] Undo/redo — snapshot the song state before every mutation and keep a history stack; removes the risk of accidentally losing work with no recovery
+- [ ] Copy/paste measures — yank a measure and paste it elsewhere; useful for repeating riffs without re-entering every note
+- [ ] Transpose — shift all frets in the current section or whole song by ±n semitones; handy when a riff sits better one fret up or when adapting to a capo position
