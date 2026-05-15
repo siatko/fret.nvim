@@ -497,11 +497,10 @@ local function show_help()
     ("  %-12s  quit (prompts if unsaved)"):format(km.quit),
     ("  %-12s  show this help"):format(km.help),
     "",
-    "  Commands  /  Global keymaps",
+    "  Commands",
     "  :FretNew        open a new tab",
     "  :FretOpen       pick a saved tab to reopen",
     "  :FretSave       save current tab",
-    ("  %-12s  find & open saved tab"):format(km.find_tab),
     "",
     "  press q or <Esc> to close",
   }
