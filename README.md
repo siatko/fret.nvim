@@ -206,6 +206,14 @@ These are active everywhere, not just inside the editor:
 | `<leader>gt`  | Open new tab editor (`:FretNew`)    |
 | `<leader>gf`  | Telescope picker for saved tabs     |
 
+## Code maintenance
+
+- [ ] `copy_tab` gives no feedback when the tab has no title — `save_with_conflict_check` returns silently, so the clipboard is set but the user sees nothing; restore the "tab copied to clipboard" notify for this case
+- [ ] `set_timesig` and `set_subdivision` use `vim.fn.input` (blocking, untestable) while every other prompt uses `vim.ui.input` — makes those two functions inconsistent and impossible to mock in tests
+- [ ] `:FretOpen` fallback in `init.lua` duplicates the `glob` logic already in `telescope.lua` — if the path or pattern ever changes it needs updating in two places
+- [ ] `M.open` has five levels of nested callbacks — hard to follow and brittle to extend; a flat step-function or recursive approach would be easier to maintain
+- [ ] `quit_editor` can leave the user stuck if they try "Save and quit" but have no title and then cancel the rename prompt — the buffer stays open with no clean exit path
+
 ## TODO
 
 **Technique markers** (hammer-on `h`, pull-off `p`, slide `/` `\`) are the biggest missing piece compared to real tabs. They are not standalone notes — they are connections *between* two notes. That makes them structurally different from what's here: each slot would need to carry a `connect_out` field (e.g. `"h"`, `"p"`, `"/"`) pointing toward the next slot, and the renderer would have to substitute that character for the space filler it currently puts between the two slots. Until then, you can annotate them by hand after copying with `Y`.
