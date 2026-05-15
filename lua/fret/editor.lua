@@ -356,7 +356,7 @@ end
 
 local function copy_tab(bufnr)
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-  local text  = table.concat(lines, "\n")
+  local text  = "```fret\n" .. table.concat(lines, "\n") .. "\n```"
   vim.fn.setreg("+", text)
   vim.fn.setreg('"', text)
   vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
