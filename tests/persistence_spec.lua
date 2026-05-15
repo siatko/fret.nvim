@@ -161,4 +161,72 @@ describe("persistence", function()
       assert.truthy(errored)
     end)
   end)
+
+  -- ── overwrite protection ──────────────────────────────────────────────────
+
+  describe("overwrite protection", function()
+    it("prompts before overwriting a file opened from a different source", function()
+      local song = tab.new({ title = "Dupe", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      write_fret(dir .. "/Dupe.fret", song)
+      editor.open({ song = tab.new({ title = "Dupe", time_sig = { num = 4, den = 4 }, subdivision = 1 }) })
+
+      local prompted = false
+      local orig_select = vim.ui.select
+      vim.ui.select = function(_, _, cb) prompted = true; cb("Cancel") end
+      vim.cmd("FretSave")
+      vim.ui.select = orig_select
+
+      assert.truthy(prompted)
+    end)
+
+    it("does not overwrite when the user cancels the prompt", function()
+      local song = tab.new({ title = "Keep", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      write_fret(dir .. "/Keep.fret", song)
+      local mtime = vim.fn.getftime(dir .. "/Keep.fret")
+
+      editor.open({ song = tab.new({ title = "Keep", time_sig = { num = 4, den = 4 }, subdivision = 1 }) })
+
+      local orig_select = vim.ui.select
+      vim.ui.select = function(_, _, cb) cb("Cancel") end
+      vim.cmd("FretSave")
+      vim.ui.select = orig_select
+
+      assert.equals(mtime, vim.fn.getftime(dir .. "/Keep.fret"))
+    end)
+
+    it("overwrites when the user confirms", function()
+      local song = tab.new({ title = "Replace", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      write_fret(dir .. "/Replace.fret", song)
+
+      local new_song = tab.new({ title = "Replace", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      tab.set_note(new_song, 1, 1, 1, 1, 7)
+      editor.open({ song = new_song })
+
+      local orig_select = vim.ui.select
+      vim.ui.select = function(_, _, cb) cb("Overwrite") end
+      vim.cmd("FretSave")
+      vim.ui.select = orig_select
+
+      local f = io.open(dir .. "/Replace.fret", "r")
+      local content = f:read("*a"); f:close()
+      local ok, decoded = pcall(vim.json.decode, content)
+      assert.truthy(ok)
+      assert.equals("Replace", decoded.title)
+    end)
+
+    it("does not prompt when saving back to the file it was opened from", function()
+      local song = tab.new({ title = "Own", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      write_fret(dir .. "/Own.fret", song)
+      editor.open_file(dir .. "/Own.fret")
+
+      local prompted = false
+      local orig_select = vim.ui.select
+      vim.ui.select = function(_, _, cb) prompted = true; cb("Cancel") end
+      vim.cmd("FretSave")
+      vim.ui.select = orig_select
+
+      assert.is_false(prompted)
+      assert.equals(1, vim.fn.filereadable(dir .. "/Own.fret"))
+    end)
+  end)
 end)

@@ -382,12 +382,15 @@ local function title_to_filename(title)
   return title:gsub('[/\\:*?"<>|]', "_") .. ".fret"
 end
 
-local function save_tab(bufnr)
+local function save_tab(bufnr, force)
   local st = get_state(bufnr)
   if not st or not st.song.title then return false end
   local dir = vim.fn.expand(config.options.fret_dir or "~/frets")
   vim.fn.mkdir(dir, "p")
   local path = dir .. "/" .. title_to_filename(st.song.title)
+  if not force and vim.fn.filereadable(path) == 1 and path ~= st.source_path then
+    return false, nil, path  -- conflict: file exists and belongs to a different tab
+  end
   local ok, json = pcall(vim.json.encode, st.song)
   if not ok then
     vim.notify("fret: failed to encode tab", vim.log.levels.ERROR)
@@ -400,8 +403,29 @@ local function save_tab(bufnr)
   end
   f:write(json)
   f:close()
-  st.dirty = false
+  st.dirty       = false
+  st.source_path = path  -- claim this path so future saves don't re-prompt
   return true, path
+end
+
+local function save_with_conflict_check(bufnr, on_saved)
+  local st = get_state(bufnr)
+  if not st or not st.song.title then return end
+  local saved, path, conflict = save_tab(bufnr)
+  if saved then
+    on_saved(path)
+  elseif conflict then
+    vim.ui.select(
+      { "Overwrite", "Cancel" },
+      { prompt = ("'%s' already exists:"):format(st.song.title) },
+      function(choice)
+        if choice == "Overwrite" then
+          local ok, p = save_tab(bufnr, true)
+          if ok then on_saved(p) end
+        end
+      end
+    )
+  end
 end
 
 -- ── explicit save ────────────────────────────────────────────────────────────
@@ -413,10 +437,9 @@ local function save_explicit(bufnr)
     vim.notify("fret: title is required to save", vim.log.levels.WARN)
     return
   end
-  local saved, path = save_tab(bufnr)
-  if saved then
+  save_with_conflict_check(bufnr, function(path)
     vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
-  end
+  end)
 end
 
 -- ── quit ─────────────────────────────────────────────────────────────────────
@@ -433,11 +456,10 @@ local function quit_editor(bufnr)
     { prompt = "Unsaved changes:" },
     function(choice)
       if choice == "Save and quit" then
-        local saved, path = save_tab(bufnr)
-        if saved then
+        save_with_conflict_check(bufnr, function(path)
           vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
           vim.api.nvim_buf_delete(bufnr, { force = true })
-        end
+        end)
       elseif choice == "Quit without saving" then
         vim.api.nvim_buf_delete(bufnr, { force = true })
       end
@@ -452,12 +474,9 @@ local function copy_tab(bufnr)
   local text  = "```fret\n" .. table.concat(lines, "\n") .. "\n```"
   vim.fn.setreg("+", text)
   vim.fn.setreg('"', text)
-  local saved, path = save_tab(bufnr)
-  if saved then
+  save_with_conflict_check(bufnr, function(path)
     vim.notify("fret: copied and saved to " .. path, vim.log.levels.INFO)
-  else
-    vim.notify("fret: tab copied to clipboard", vim.log.levels.INFO)
-  end
+  end)
 end
 
 -- ── help popup ───────────────────────────────────────────────────────────────
@@ -606,7 +625,7 @@ local SUBDIVISIONS = {
   { label = "32nd notes",           value = 8 },
 }
 
-local function open_with_song(song)
+local function open_with_song(song, source_path)
   tab_count = tab_count + 1
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_name(bufnr, "fret://tab-" .. tab_count)
@@ -622,6 +641,7 @@ local function open_with_song(song)
     cur_si       = 1,
     cur_str      = 1,
     dirty        = false,
+    source_path  = source_path,
     pos_map      = {},
     slot_starts  = {},
     slot_widths  = {},
@@ -755,7 +775,7 @@ function M.open_file(path)
     vim.notify("fret: invalid fret file: " .. path, vim.log.levels.ERROR)
     return
   end
-  open_with_song(normalize_song(song))
+  open_with_song(normalize_song(song), path)
 end
 
 return M
