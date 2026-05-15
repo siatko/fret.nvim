@@ -416,12 +416,18 @@ local function save_with_conflict_check(bufnr, on_saved)
     on_saved(path)
   elseif conflict then
     vim.ui.select(
-      { "Overwrite", "Cancel" },
+      { "Overwrite", "Rename", "Cancel" },
       { prompt = ("'%s' already exists:"):format(st.song.title) },
       function(choice)
         if choice == "Overwrite" then
           local ok, p = save_tab(bufnr, true)
           if ok then on_saved(p) end
+        elseif choice == "Rename" then
+          vim.ui.input({ prompt = "New title: ", default = st.song.title }, function(input)
+            if not input or input == "" then return end
+            st.song.title = input
+            save_with_conflict_check(bufnr, on_saved)
+          end)
         end
       end
     )

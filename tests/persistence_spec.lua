@@ -214,6 +214,22 @@ describe("persistence", function()
       assert.equals("Replace", decoded.title)
     end)
 
+    it("saves under the new title when the user renames", function()
+      local song = tab.new({ title = "Taken", time_sig = { num = 4, den = 4 }, subdivision = 1 })
+      write_fret(dir .. "/Taken.fret", song)
+      editor.open({ song = tab.new({ title = "Taken", time_sig = { num = 4, den = 4 }, subdivision = 1 }) })
+
+      local orig_select = vim.ui.select
+      local orig_input  = vim.ui.input
+      vim.ui.select = function(_, _, cb) cb("Rename") end
+      vim.ui.input  = function(_, cb)    cb("New Name") end
+      vim.cmd("FretSave")
+      vim.ui.select = orig_select
+      vim.ui.input  = orig_input
+
+      assert.equals(1, vim.fn.filereadable(dir .. "/New Name.fret"))
+    end)
+
     it("does not prompt when saving back to the file it was opened from", function()
       local song = tab.new({ title = "Own", time_sig = { num = 4, den = 4 }, subdivision = 1 })
       write_fret(dir .. "/Own.fret", song)
