@@ -13,7 +13,7 @@ describe("persistence", function()
 
   after_each(function()
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_get_option(buf, "filetype") == "fret" then
+      if vim.api.nvim_get_option_value("filetype", { buf = buf }) == "fret" then
         pcall(vim.api.nvim_buf_delete, buf, { force = true })
       end
     end

@@ -66,9 +66,9 @@ local function redraw(bufnr)
   st.slot_widths  = slot_widths
   st.section_rows = section_rows
 
-  vim.api.nvim_buf_set_option(bufnr, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true,  { buf = bufnr })
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("modifiable", false, { buf = bufnr })
 
   -- clamp cursor
   if st.cur_sec > #st.song.sections then st.cur_sec = #st.song.sections end
@@ -544,8 +544,8 @@ local function show_help()
 
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+  vim.api.nvim_set_option_value("modifiable", false,    { buf = buf })
+  vim.api.nvim_set_option_value("buftype",   "nofile",  { buf = buf })
 
   local ui     = vim.api.nvim_list_uis()[1]
   local row    = math.floor((ui.height - height) / 2)
@@ -561,7 +561,7 @@ local function show_help()
     border   = "rounded",
   })
 
-  vim.api.nvim_win_set_option(win, "cursorline", false)
+  vim.api.nvim_set_option_value("cursorline", false, { win = win })
 
   -- highlight the title line
   local ns_help = vim.api.nvim_create_namespace("fret_help")
@@ -635,10 +635,10 @@ local function open_with_song(song, source_path)
   tab_count = tab_count + 1
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_name(bufnr, "fret://tab-" .. tab_count)
-  vim.api.nvim_buf_set_option(bufnr, "filetype",  "fret")
-  vim.api.nvim_buf_set_option(bufnr, "buftype",   "nofile")
-  vim.api.nvim_buf_set_option(bufnr, "swapfile",  false)
-  vim.api.nvim_buf_set_option(bufnr, "modifiable", false)
+  vim.api.nvim_set_option_value("filetype",   "fret",   { buf = bufnr })
+  vim.api.nvim_set_option_value("buftype",    "nofile", { buf = bufnr })
+  vim.api.nvim_set_option_value("swapfile",   false,    { buf = bufnr })
+  vim.api.nvim_set_option_value("modifiable", false,    { buf = bufnr })
 
   state[bufnr] = {
     song         = song,

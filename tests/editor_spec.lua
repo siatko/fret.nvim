@@ -13,7 +13,7 @@ describe("editor", function()
 
   after_each(function()
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_get_option(buf, "filetype") == "fret" then
+      if vim.api.nvim_get_option_value("filetype", { buf = buf }) == "fret" then
         pcall(vim.api.nvim_buf_delete, buf, { force = true })
       end
     end
@@ -40,12 +40,12 @@ describe("editor", function()
   describe("buffer properties", function()
     it("filetype is fret", function()
       open_test_song()
-      assert.equals("fret", vim.api.nvim_buf_get_option(0, "filetype"))
+      assert.equals("fret", vim.api.nvim_get_option_value("filetype", { buf = 0 }))
     end)
 
     it("buffer is not directly modifiable", function()
       open_test_song()
-      assert.is_false(vim.api.nvim_buf_get_option(0, "modifiable"))
+      assert.is_false(vim.api.nvim_get_option_value("modifiable", { buf = 0 }))
     end)
 
     it("buffer name follows the fret:// scheme", function()
