@@ -9,6 +9,11 @@ function M.setup(opts)
       require("fret.editor").open()
     end, { desc = "fret: new tab" })
   end
+  if km and km.find_tab then
+    vim.keymap.set("n", km.find_tab, function()
+      require("fret.telescope").find_tabs()
+    end, { desc = "fret: find tab" })
+  end
 
   vim.api.nvim_create_user_command("FretNew", function()
     require("fret.editor").open()

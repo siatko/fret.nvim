@@ -60,13 +60,17 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
 
 ## Setup (lazy.nvim)
 
+Telescope is required.
+
 ```lua
 {
   "siatko/fret.nvim",
+  dependencies = { "nvim-telescope/telescope.nvim" },
   config = function()
     require("fret").setup({
       keymaps = {
-        new_tab = "<leader>gt",    -- g for guitar, t for tab, genius
+        new_tab  = "<leader>gt",   -- open new tab editor
+        find_tab = "<leader>gf",   -- telescope picker for saved tabs
       },
     })
   end,
@@ -82,7 +86,7 @@ Beat numbers go up as high as you need — 12/8 aligns correctly, no shifting.
 4. Press `Y` to copy to clipboard — the tab is also saved to `fret_dir/<title>.fret`
 5. Paste into your markdown/notes/wherever — the code block keeps it monospaced
 6. Press `q` to quit (prompts to save if there are unsaved changes)
-7. Come back later with `:FretOpen` — pick a saved tab and it reopens in the editor
+7. Come back later with `<leader>gf` or `:FretOpen` — telescope picker or fallback select to reopen any saved tab
 
 ## Keymaps
 
@@ -136,6 +140,7 @@ Press `?` inside the editor to show this as a popup.
 | `t` | Change time signature     |
 | `s` | Change subdivision        |
 | `Y` | Copy tab to clipboard and save to disk |
+| `W` | Save tab to disk                       |
 | `q` | Quit (prompts if unsaved changes)      |
 | `?` | Show keybinding help popup             |
 
@@ -166,6 +171,7 @@ Everything can be changed afterwards with `T`, `U`, `G`, `O`, `t`, `s`.
 |----------------------|---------------------------------------------|
 | `:FretNew`           | Open a new tab editor                       |
 | `:FretOpen [path]`   | Pick a saved tab to reopen (or open a path) |
+| `:FretSave`          | Save current tab to disk                    |
 | `:FretCopy`          | Copy tab to clipboard and save              |
 | `:FretAddMeasure`    | Add a measure                               |
 | `:FretTimeSig`       | Change time signature                       |

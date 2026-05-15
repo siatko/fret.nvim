@@ -400,6 +400,21 @@ local function save_tab(bufnr)
   return true, path
 end
 
+-- ── explicit save ────────────────────────────────────────────────────────────
+
+local function save_explicit(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  if not st.song.title then
+    vim.notify("fret: title is required to save", vim.log.levels.WARN)
+    return
+  end
+  local saved, path = save_tab(bufnr)
+  if saved then
+    vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
+  end
+end
+
 -- ── quit ─────────────────────────────────────────────────────────────────────
 
 local function quit_editor(bufnr)
@@ -477,13 +492,15 @@ local function show_help()
     "  Other",
     ("  %-12s  change time signature"):format(km.set_timesig),
     ("  %-12s  change subdivision"):format(km.set_subdiv),
-    ("  %-12s  copy & save tab"):format(km.copy_tab),
+    ("  %-12s  copy tab & save"):format(km.copy_tab),
+    ("  %-12s  save tab"):format(km.save_tab),
     ("  %-12s  quit (prompts if unsaved)"):format(km.quit),
     ("  %-12s  show this help"):format(km.help),
     "",
     "  Commands",
     "  :FretNew        open a new tab",
     "  :FretOpen       pick a saved tab to reopen",
+    "  :FretSave       save current tab",
     "",
     "  press q or <Esc> to close",
   }
@@ -554,6 +571,7 @@ local function setup_keymaps(bufnr)
   map(km.set_timesig,    function() set_timesig(bufnr) end)
   map(km.set_subdiv,     function() set_subdivision(bufnr) end)
   map(km.copy_tab,       function() copy_tab(bufnr) end)
+  map(km.save_tab,       function() save_explicit(bufnr) end)
   map(km.quit,           function() quit_editor(bufnr) end)
   map(km.add_section,    function() add_section(bufnr) end)
   map(km.delete_section, function() delete_section(bufnr) end)
@@ -614,6 +632,7 @@ local function open_with_song(song)
     FretTimeSig       = function() set_timesig(bufnr) end,
     FretSubdiv        = function() set_subdivision(bufnr) end,
     FretCopy          = function() copy_tab(bufnr) end,
+    FretSave          = function() save_explicit(bufnr) end,
     FretAddSection    = function() add_section(bufnr) end,
     FretDeleteSection = function() delete_section(bufnr) end,
     FretRenameSection = function() rename_section(bufnr) end,
