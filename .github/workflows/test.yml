@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Neovim
+        run: |
+          wget -q https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz
+          tar xzf nvim-linux-x86_64.tar.gz
+          sudo mv nvim-linux-x86_64 /opt/nvim
+          echo "/opt/nvim/bin" >> $GITHUB_PATH
+
+      - name: Install plenary.nvim
+        run: |
+          mkdir -p ~/.local/share/nvim/lazy
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ~/.local/share/nvim/lazy/plenary.nvim
+
+      - name: Run tests
+        run: make test
