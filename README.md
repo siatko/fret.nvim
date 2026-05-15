@@ -68,6 +68,7 @@ Telescope is required.
   dependencies = { "nvim-telescope/telescope.nvim" },
   config = function()
     require("fret").setup({
+      fret_dir = vim.fn.expand("~/Documents/fret"),
       keymaps = {
         new_tab  = "<leader>gt",   -- open new tab editor
         find_tab = "<leader>gf",   -- telescope picker for saved tabs
