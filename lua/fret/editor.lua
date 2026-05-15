@@ -736,6 +736,8 @@ local function normalize_song(song)
   return song
 end
 
+function M._get_state(bufnr) return state[bufnr] end
+
 function M.open_file(path)
   local f = io.open(path, "r")
   if not f then

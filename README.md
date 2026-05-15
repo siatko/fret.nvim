@@ -195,7 +195,16 @@ require("fret").setup({
 })
 ```
 
-The filename is derived from the title (`My Song.fret`). Saving happens automatically when you press `Y`. Use `:FretOpen` to browse and reopen saved tabs.
+The filename is derived from the title (`My Song.fret`). Saving happens when you press `Y` (copy + save) or `W` (save only). Use `:FretOpen` or `<leader>gf` to browse and reopen saved tabs.
+
+## Global keymaps
+
+These are active everywhere, not just inside the editor:
+
+| Key           | Action                              |
+|---------------|-------------------------------------|
+| `<leader>gt`  | Open new tab editor (`:FretNew`)    |
+| `<leader>gf`  | Telescope picker for saved tabs     |
 
 ## TODO
 
