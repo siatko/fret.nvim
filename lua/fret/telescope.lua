@@ -6,11 +6,9 @@ function M.find_tabs()
   local conf         = require("telescope.config").values
   local actions      = require("telescope.actions")
   local action_state = require("telescope.actions.state")
-  local config       = require("fret.config")
   local editor       = require("fret.editor")
 
-  local dir   = vim.fn.expand(config.options.fret_dir or "~/frets")
-  local files = vim.fn.glob(dir .. "/*.fret", false, true)
+  local files, dir = editor.list_tab_files()
 
   if #files == 0 then
     vim.notify("fret: no saved tabs in " .. dir, vim.log.levels.WARN)

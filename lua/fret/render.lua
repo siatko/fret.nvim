@@ -95,12 +95,15 @@ function M.render(song)
     table.insert(all_lines, "")  -- blank separator before sections
   end
 
+  local global_mi = 0  -- absolute measure counter across all sections
+
   for sec_idx, section in ipairs(song.sections) do
     -- ── header ──────────────────────────────────────────────────────────────
     table.insert(all_lines, section_header(section))
     local header_row = #all_lines
 
-    -- ── ruler + string lines ─────────────────────────────────────────────────
+    -- ── bar numbers + ruler + string lines ───────────────────────────────────
+    local bar   = string.rep(" ", prefix_w) .. "|"
     local ruler = ts .. string.rep(" ", prefix_w - #ts) .. "|"
     local str_lines = {}
     for i = 1, n_strings do
@@ -115,6 +118,7 @@ function M.render(song)
     local col = prefix_w + 2
 
     for mi, measure in ipairs(section.measures) do
+      global_mi = global_mi + 1
       local widths = measure_col_widths(measure, spm, subdivision)
       slot_starts[sec_idx][mi] = {}
       slot_widths[sec_idx][mi] = {}
@@ -125,6 +129,12 @@ function M.render(song)
       for i = 1, n_strings do seg_strs[i] = " " end
 
       col = col + 1  -- leading " " of the segment
+
+      -- bar number: left-aligned measure label filling the segment width
+      local num_str = tostring(global_mi)
+      local seg_w   = 1
+      for si = 1, spm do seg_w = seg_w + widths[si] + 1 end
+      bar = bar .. " " .. num_str .. string.rep(" ", seg_w - 1 - #num_str) .. "|"
 
       for si = 1, spm do
         slot_starts[sec_idx][mi][si] = col
@@ -147,6 +157,7 @@ function M.render(song)
       col = col + 1  -- closing "|"
     end
 
+    table.insert(all_lines, bar)
     table.insert(all_lines, ruler)
     local ruler_row = #all_lines
 

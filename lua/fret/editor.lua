@@ -301,33 +301,36 @@ end
 local function set_timesig(bufnr)
   local st = get_state(bufnr)
   if not st then return end
-  local input = vim.fn.input("Time signature (e.g. 4/4 or 3/4): ")
-  if not input or input == "" then return end
-  local num, den = input:match("^(%d+)/(%d+)$")
-  num, den = tonumber(num), tonumber(den)
-  if not num or not den or den == 0 then
-    vim.notify("fret: invalid time signature", vim.log.levels.WARN)
-    return
-  end
-  tab_mod.set_time_sig(st.song, num, den)
-  st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
-  mark_dirty(bufnr)
-  redraw(bufnr)
+  vim.ui.input({ prompt = "Time signature (e.g. 4/4 or 3/4): " }, function(input)
+    if not input or input == "" then return end
+    local num, den = input:match("^(%d+)/(%d+)$")
+    num, den = tonumber(num), tonumber(den)
+    if not num or not den or den == 0 then
+      vim.notify("fret: invalid time signature", vim.log.levels.WARN)
+      return
+    end
+    tab_mod.set_time_sig(st.song, num, den)
+    st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
+    mark_dirty(bufnr)
+    redraw(bufnr)
+  end)
 end
 
 local function set_subdivision(bufnr)
   local st = get_state(bufnr)
   if not st then return end
-  local input = vim.fn.input("Subdivisions per beat (1=quarter 2=8th 4=16th): ")
-  local n = tonumber(input)
-  if not n or n < 1 then
-    vim.notify("fret: invalid subdivision", vim.log.levels.WARN)
-    return
-  end
-  tab_mod.set_subdivision(st.song, n)
-  st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
-  mark_dirty(bufnr)
-  redraw(bufnr)
+  vim.ui.input({ prompt = "Subdivisions per beat (1=quarter 2=8th 4=16th): " }, function(input)
+    if not input then return end
+    local n = tonumber(input)
+    if not n or n < 1 then
+      vim.notify("fret: invalid subdivision", vim.log.levels.WARN)
+      return
+    end
+    tab_mod.set_subdivision(st.song, n)
+    st.cur_sec = 1; st.cur_mi = 1; st.cur_si = 1
+    mark_dirty(bufnr)
+    redraw(bufnr)
+  end)
 end
 
 -- ── song metadata ────────────────────────────────────────────────────────────
@@ -462,10 +465,24 @@ local function quit_editor(bufnr)
     { prompt = "Unsaved changes:" },
     function(choice)
       if choice == "Save and quit" then
-        save_with_conflict_check(bufnr, function(path)
-          vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
-          vim.api.nvim_buf_delete(bufnr, { force = true })
-        end)
+        local function do_save_and_quit()
+          save_with_conflict_check(bufnr, function(path)
+            vim.notify("fret: saved to " .. path, vim.log.levels.INFO)
+            vim.api.nvim_buf_delete(bufnr, { force = true })
+          end)
+        end
+        if not st.song.title then
+          vim.ui.input({ prompt = "Title (required to save): " }, function(input)
+            if not input or input == "" then
+              vim.notify("fret: title is required to save", vim.log.levels.WARN)
+              return
+            end
+            st.song.title = input
+            do_save_and_quit()
+          end)
+        else
+          do_save_and_quit()
+        end
       elseif choice == "Quit without saving" then
         vim.api.nvim_buf_delete(bufnr, { force = true })
       end
@@ -767,6 +784,12 @@ local function normalize_song(song)
 end
 
 function M._get_state(bufnr) return state[bufnr] end
+
+function M.list_tab_files()
+  local dir   = vim.fn.expand(config.options.fret_dir or "~/frets")
+  local files = vim.fn.glob(dir .. "/*.fret", false, true)
+  return files, dir
+end
 
 function M.open_file(path)
   local f = io.open(path, "r")

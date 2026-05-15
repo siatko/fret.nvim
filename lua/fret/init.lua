@@ -21,13 +21,11 @@ function M.setup(opts)
 
   vim.api.nvim_create_user_command("FretOpen", function(args)
     local editor = require("fret.editor")
-    local cfg    = require("fret.config")
     if args.args ~= "" then
       editor.open_file(vim.fn.expand(args.args))
       return
     end
-    local dir   = vim.fn.expand(cfg.options.fret_dir or "~/frets")
-    local files = vim.fn.glob(dir .. "/*.fret", false, true)
+    local files, dir = editor.list_tab_files()
     if #files == 0 then
       vim.notify("fret: no saved tabs in " .. dir, vim.log.levels.WARN)
       return

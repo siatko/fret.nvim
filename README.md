@@ -209,10 +209,10 @@ These are active everywhere, not just inside the editor:
 ## Code maintenance
 
 - [ ] `copy_tab` gives no feedback when the tab has no title — `save_with_conflict_check` returns silently, so the clipboard is set but the user sees nothing; restore the "tab copied to clipboard" notify for this case
-- [ ] `set_timesig` and `set_subdivision` use `vim.fn.input` (blocking, untestable) while every other prompt uses `vim.ui.input` — makes those two functions inconsistent and impossible to mock in tests
-- [ ] `:FretOpen` fallback in `init.lua` duplicates the `glob` logic already in `telescope.lua` — if the path or pattern ever changes it needs updating in two places
+- [x] `set_timesig` and `set_subdivision` use `vim.fn.input` (blocking, untestable) while every other prompt uses `vim.ui.input` — makes those two functions inconsistent and impossible to mock in tests
+- [x] `:FretOpen` fallback in `init.lua` duplicates the `glob` logic already in `telescope.lua` — extracted into `editor.list_tab_files()` used by both callers
 - [ ] `M.open` has five levels of nested callbacks — hard to follow and brittle to extend; a flat step-function or recursive approach would be easier to maintain
-- [ ] `quit_editor` can leave the user stuck if they try "Save and quit" but have no title and then cancel the rename prompt — the buffer stays open with no clean exit path
+- [x] `quit_editor` can leave the user stuck if they try "Save and quit" but have no title and then cancel the rename prompt — now prompts for a title before proceeding
 
 ## TODO
 

@@ -117,6 +117,69 @@ describe("editor", function()
     end)
   end)
 
+  -- ── FretTimeSig / FretSubdiv ──────────────────────────────────────────────
+
+  describe("FretTimeSig", function()
+    it("updates the time signature", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local orig_input = vim.ui.input
+      vim.ui.input = function(_, cb) cb("3/4") end
+      vim.cmd("FretTimeSig")
+      vim.ui.input = orig_input
+      local st = editor._get_state(bufnr)
+      assert.equals(3, st.song.time_sig.num)
+      assert.equals(4, st.song.time_sig.den)
+    end)
+
+    it("marks the buffer dirty", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local orig_input = vim.ui.input
+      vim.ui.input = function(_, cb) cb("3/4") end
+      vim.cmd("FretTimeSig")
+      vim.ui.input = orig_input
+      assert.is_true(editor._get_state(bufnr).dirty)
+    end)
+
+    it("rejects an invalid time signature", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local warned = false
+      local orig_input  = vim.ui.input
+      local orig_notify = vim.notify
+      vim.ui.input = function(_, cb) cb("not/valid") end
+      vim.notify   = function(_, lvl) if lvl == vim.log.levels.WARN then warned = true end end
+      vim.cmd("FretTimeSig")
+      vim.ui.input = orig_input
+      vim.notify   = orig_notify
+      assert.truthy(warned)
+      assert.equals(4, editor._get_state(bufnr).song.time_sig.num)
+    end)
+  end)
+
+  describe("FretSubdiv", function()
+    it("updates the subdivision", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local orig_input = vim.ui.input
+      vim.ui.input = function(_, cb) cb("2") end
+      vim.cmd("FretSubdiv")
+      vim.ui.input = orig_input
+      assert.equals(2, editor._get_state(bufnr).song.subdivision)
+    end)
+
+    it("marks the buffer dirty", function()
+      open_test_song()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local orig_input = vim.ui.input
+      vim.ui.input = function(_, cb) cb("2") end
+      vim.cmd("FretSubdiv")
+      vim.ui.input = orig_input
+      assert.is_true(editor._get_state(bufnr).dirty)
+    end)
+  end)
+
   -- ── FretCopy ──────────────────────────────────────────────────────────────
 
   describe("FretCopy", function()
