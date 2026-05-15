@@ -721,6 +721,21 @@ function M.open(opts)
   end)
 end
 
+local function normalize_song(song)
+  -- vim.json.decode turns sparse Lua arrays into JSON arrays padded with null,
+  -- which decodes back as vim.NIL. Strip those so slot tables only hold real frets.
+  for _, section in ipairs(song.sections or {}) do
+    for _, measure in ipairs(section.measures or {}) do
+      for _, slot in ipairs(measure.slots or {}) do
+        for k, v in pairs(slot) do
+          if v == vim.NIL then slot[k] = nil end
+        end
+      end
+    end
+  end
+  return song
+end
+
 function M.open_file(path)
   local f = io.open(path, "r")
   if not f then
@@ -734,7 +749,7 @@ function M.open_file(path)
     vim.notify("fret: invalid fret file: " .. path, vim.log.levels.ERROR)
     return
   end
-  open_with_song(song)
+  open_with_song(normalize_song(song))
 end
 
 return M
