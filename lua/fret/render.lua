@@ -13,6 +13,98 @@ local config = require("fret.config")
 
 local STRINGS = { "e", "B", "G", "D", "A", "E" }
 
+local function has_any_note(slot)
+  if not slot then return false end
+  for _, v in pairs(slot) do
+    if v ~= nil then return true end
+  end
+  return false
+end
+
+local function render_dur_segment(measure, widths, spm, subdivision)
+  -- only slots with notes AND explicit duration participate
+  local durs = {}
+  for si = 1, spm do
+    local explicit = measure.durations and measure.durations[si]
+    if explicit ~= nil and has_any_note(measure.slots[si]) then
+      durs[si] = explicit
+    end
+  end
+
+  -- for a beat, find the heaviest beam char (═ if any 16th+, else ─)
+  local function beat_bchar(beat_start, beat_end)
+    for bi = beat_start, beat_end do
+      if durs[bi] and durs[bi] >= 16 then return "═" end
+    end
+    return "─"
+  end
+
+  -- within a beat, check if there is a beamable note before/after si
+  local function has_beamable_before(si, beat_start)
+    for bi = beat_start, si - 1 do
+      if durs[bi] and durs[bi] >= 8 then return true end
+    end
+    return false
+  end
+
+  local function has_beamable_after(si, beat_end)
+    for bi = si + 1, beat_end do
+      if durs[bi] and durs[bi] >= 8 then return true end
+    end
+    return false
+  end
+
+  local seg = " "
+
+  for si = 1, spm do
+    local dur = durs[si]
+    local w   = widths[si]
+    local bp  = (si - 1) % subdivision + 1
+    local beat_start = si - bp + 1
+    local beat_end   = math.min(beat_start + subdivision - 1, spm)
+
+    if not dur then
+      -- empty slot: render as beam connector if it lies between two beamable notes in same beat
+      local bridge = bp > 1 and bp < subdivision
+                     and has_beamable_before(si, beat_start)
+                     and has_beamable_after(si, beat_end)
+      if bridge then
+        local bc = beat_bchar(beat_start, beat_end)
+        seg = seg .. string.rep(bc, w) .. bc
+      else
+        seg = seg .. string.rep(" ", w) .. " "
+      end
+    else
+      local can_beam = dur >= 8
+      local beam_in  = can_beam and bp > 1  and has_beamable_before(si, beat_start)
+      local beam_out = can_beam and bp < subdivision and has_beamable_after(si, beat_end)
+      local bc       = beat_bchar(beat_start, beat_end)
+
+      local fill = beam_in and string.rep(bc, w - 1) or string.rep(" ", w - 1)
+
+      local stem
+      if can_beam then
+        if beam_in and beam_out then
+          stem = (dur >= 16) and "╦" or "┬"
+        elseif beam_in then
+          stem = (dur >= 16) and "╗" or "┐"
+        elseif beam_out then
+          stem = (dur >= 16) and "╔" or "┌"
+        else
+          stem = "│"
+        end
+      else
+        stem = "│"
+      end
+
+      local trail = beam_out and bc or " "
+      seg = seg .. fill .. stem .. trail
+    end
+  end
+
+  return seg
+end
+
 local function fmt_fret(fret, width)
   if fret == nil then return string.rep("-", width) end
   local s = tostring(fret)
@@ -42,6 +134,19 @@ end
 
 local function lpad(s, w)
   return string.rep(" ", w - #s) .. s
+end
+
+local function song_has_durations(song)
+  for _, section in ipairs(song.sections) do
+    for _, measure in ipairs(section.measures) do
+      if measure.durations then
+        for _, v in pairs(measure.durations) do
+          if v ~= nil then return true end
+        end
+      end
+    end
+  end
+  return false
 end
 
 local function section_header(section)
@@ -95,6 +200,7 @@ function M.render(song)
     table.insert(all_lines, "")  -- blank separator before sections
   end
 
+  local show_dur_row = song_has_durations(song)
   local global_mi = 0  -- absolute measure counter across all sections
 
   for sec_idx, section in ipairs(song.sections) do
@@ -102,9 +208,10 @@ function M.render(song)
     table.insert(all_lines, section_header(section))
     local header_row = #all_lines
 
-    -- ── bar numbers + ruler + string lines ───────────────────────────────────
+    -- ── bar numbers + ruler + duration + string lines ────────────────────────
     local bar   = string.rep(" ", prefix_w) .. "|"
     local ruler = ts .. string.rep(" ", prefix_w - #ts) .. "|"
+    local dur   = string.rep(" ", prefix_w) .. "|"
     local str_lines = {}
     for i = 1, n_strings do
       str_lines[i] = strings[i] .. string.rep(" ", prefix_w - #strings[i]) .. "|"
@@ -150,6 +257,9 @@ function M.render(song)
       end
 
       ruler = ruler .. seg_ruler .. "|"
+      if show_dur_row then
+        dur = dur .. render_dur_segment(measure, widths, spm, subdivision) .. "|"
+      end
       for i = 1, n_strings do
         str_lines[i] = str_lines[i] .. seg_strs[i] .. "|"
       end
@@ -160,6 +270,7 @@ function M.render(song)
     table.insert(all_lines, bar)
     table.insert(all_lines, ruler)
     local ruler_row = #all_lines
+    if show_dur_row then table.insert(all_lines, dur) end
 
     local str_start = #all_lines + 1
     for i = 1, n_strings do

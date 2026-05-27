@@ -112,6 +112,7 @@ describe("editor", function()
       local bound   = {}
       for _, km in ipairs(keymaps) do bound[km.lhs] = true end
       assert.truthy(bound["x"], "x not bound")
+      assert.truthy(bound["d"], "d not bound")
       assert.truthy(bound["m"], "m not bound")
       assert.truthy(bound["M"], "M not bound")
       assert.truthy(bound["a"], "a not bound")

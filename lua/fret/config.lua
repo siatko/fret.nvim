@@ -11,6 +11,7 @@ M.defaults = {
     move_up        = "k",
     move_down      = "j",
     clear_note     = "x",
+    set_duration   = "d",
     add_measure    = "m",
     delete_measure = "M",
     set_timesig    = "t",

@@ -4,7 +4,7 @@ local M = {}
 local function new_measure(slots_per_measure)
   local slots = {}
   for i = 1, slots_per_measure do slots[i] = {} end
-  return { slots = slots }
+  return { slots = slots, durations = {} }
 end
 
 local function new_section(slots_per_measure)
@@ -87,6 +87,19 @@ end
 function M.toggle_repeat_start(song, idx)
   local s = song.sections[idx]
   if s then s.repeat_start = not s.repeat_start end
+end
+
+function M.default_duration(song)
+  return song.time_sig.den * song.subdivision
+end
+
+function M.set_duration(song, sec, mi, si, dur)
+  local s = song.sections[sec]
+  if not s then return end
+  local m = s.measures[mi]
+  if not m then return end
+  if not m.durations then m.durations = {} end
+  m.durations[si] = dur
 end
 
 function M.toggle_repeat_end(song, idx)

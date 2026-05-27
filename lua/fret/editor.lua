@@ -9,6 +9,8 @@ local state    = {}  -- keyed by bufnr
 local tab_count = 0
 local ns        = vim.api.nvim_create_namespace("fret_cursor")
 
+local DUR_LABELS = { [4]="quarter", [8]="eighth", [16]="16th", [32]="32nd" }
+
 -- ── state helpers ─────────────────────────────────────────────────────────────
 
 local function get_state(bufnr) return state[bufnr] end
@@ -45,6 +47,8 @@ local function update_highlights(bufnr)
 
   -- beat ruler row
   vim.api.nvim_buf_add_highlight(bufnr, ns, "FretCursorCol", rows.ruler_row - 1, col_s, col_e)
+  -- duration row (ruler_row + 1 = 1-indexed, so 0-indexed = ruler_row)
+  vim.api.nvim_buf_add_highlight(bufnr, ns, "FretCursorCol", rows.ruler_row, col_s, col_e)
 
   -- string rows
   for str_idx = 1, n_str do
@@ -296,6 +300,49 @@ local function toggle_repeat_end(bufnr)
   redraw(bufnr)
 end
 
+-- ── note duration mode ───────────────────────────────────────────────────────
+
+local DUR_CYCLE = { 4, 8, 16, 32 }  -- quarter → eighth → 16th → 32nd → nil (clear)
+
+local function cycle_duration(bufnr)
+  local st = get_state(bufnr)
+  if not st then return end
+  local n_str = #(config.options.strings or { "e", "B", "G", "D", "A", "E" })
+  local has_note = false
+  for s = 1, n_str do
+    if tab_mod.get_note(st.song, st.cur_sec, st.cur_mi, st.cur_si, s) ~= nil then
+      has_note = true; break
+    end
+  end
+  if not has_note then return end
+
+  local sec = st.song.sections[st.cur_sec]
+  local mea = sec and sec.measures[st.cur_mi]
+  local cur = mea and mea.durations and mea.durations[st.cur_si] or nil
+
+  -- advance cycle: nil→4→8→16→32→nil
+  local next_dur
+  if cur == nil then
+    next_dur = DUR_CYCLE[1]
+  else
+    local found = false
+    for i, v in ipairs(DUR_CYCLE) do
+      if v == cur then
+        next_dur = DUR_CYCLE[i + 1]  -- nil if at end → clears
+        found = true; break
+      end
+    end
+    if not found then next_dur = DUR_CYCLE[1] end
+  end
+
+  tab_mod.set_duration(st.song, st.cur_sec, st.cur_mi, st.cur_si, next_dur)
+  mark_dirty(bufnr)
+  redraw(bufnr)
+
+  local name = next_dur and DUR_LABELS[next_dur] or "auto"
+  vim.api.nvim_echo({ { "duration: " .. name, "Normal" } }, false, {})
+end
+
 -- ── time sig / subdivision ────────────────────────────────────────────────────
 
 local function set_timesig(bufnr)
@@ -517,6 +564,7 @@ local function show_help()
     "  Notes",
     ("  %-12s  enter fret number"):format("0 – 9"),
     ("  %-12s  clear note at cursor"):format(km.clear_note),
+    ("  %-12s  cycle duration (♩ ♪ ♬ → auto)"):format(km.set_duration),
     "",
     "  Measures",
     ("  %-12s  add measure"):format(km.add_measure),
@@ -612,6 +660,7 @@ local function setup_keymaps(bufnr)
   map(km.move_up,        function() move_up(bufnr) end)
   map(km.move_down,      function() move_down(bufnr) end)
   map(km.clear_note,     function() clear_note(bufnr) end)
+  map(km.set_duration,   function() cycle_duration(bufnr) end)
   map(km.add_measure,    function() add_measure(bufnr) end)
   map(km.delete_measure, function() delete_measure(bufnr) end)
   map(km.set_timesig,    function() set_timesig(bufnr) end)
@@ -675,6 +724,7 @@ local function open_with_song(song, source_path)
 
   -- buffer-local commands
   local cmds = {
+    FretDuration      = function() cycle_duration(bufnr) end,
     FretAddMeasure    = function() add_measure(bufnr) end,
     FretTimeSig       = function() set_timesig(bufnr) end,
     FretSubdiv        = function() set_subdivision(bufnr) end,
@@ -776,6 +826,17 @@ local function normalize_song(song)
       for _, slot in ipairs(measure.slots or {}) do
         for k, v in pairs(slot) do
           if v == vim.NIL then slot[k] = nil end
+        end
+      end
+      local d = measure.durations
+      if d then
+        for k, v in pairs(d) do
+          if v == vim.NIL then
+            d[k] = nil
+          elseif type(k) == "string" and tonumber(k) then
+            d[tonumber(k)] = v
+            d[k] = nil
+          end
         end
       end
     end

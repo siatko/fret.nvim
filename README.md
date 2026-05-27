@@ -107,6 +107,7 @@ Press `?` inside the editor to show this as a popup.
 |---------|-------------------------------------------------------|
 | `0`–`9` | Enter fret number (keep typing for two digits, then `<Enter>`) |
 | `x`     | Clear note at cursor                                  |
+| `d`     | Cycle duration at cursor: ♩ quarter → ♪ eighth → ♬ 16th → 32nd → clear |
 
 **Measures**
 
