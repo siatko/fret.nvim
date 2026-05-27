@@ -29,6 +29,7 @@
 - 6-string tab grid (e B G D A E): all the strings, none of the broken ones
 - Beat ruler with time signature support (4/4, 3/4, 12/8, whatever you heard on that one album)
 - Subdivisions: quarter, 8th, 16th, 32nd; go ahead, write that run you'll never play up to speed
+- Note duration row: press `d` on any note to cycle through ♩ ♪ ♬ — same durations within a beat beam together automatically
 - Multiple named sections (`[Intro]`, `[Verse]`, `[That part I always mess up]`)
 - Repeat markers (`|:` / `:|`) so you don't have to copy-paste the same riff four times
 - Song title, subtitle and section order (`A A B A C B A`, classic)
@@ -57,6 +58,44 @@ E    | - - - - - - - - |
 ```
 
 Beat numbers go up as high as you need - 12/8 aligns correctly, no shifting.
+
+## Note durations
+
+Press `d` on any note to cycle through note lengths. Same-duration notes within a beat connect automatically with beam notation. Press `d` again to advance, cycle through to clear.
+
+**Quarter notes** — each note gets a single stem (`│`):
+
+```
+4/4 | 1 2 3 4 |
+    | │ │ │ │ |
+e   | 0 3 5 3 |
+```
+
+**Eighth notes** — pairs within each beat connect with a beam (`┌─┐`):
+
+```
+4/4 | 1 . 2 . 3 . 4 . |
+    | ┌─┐ ┌─┐ ┌─┐ ┌─┐ |
+e   | 0 1 2 3 4 5 6 7 |
+```
+
+**Sixteenth notes** — groups of four connect with a double beam (`╔═╦═╗`):
+
+```
+4/4 | 1 . . . 2 . . . |
+    | ╔═╦═╦═╗ ╔═╦═╦═╗ |
+e   | 0 1 2 3 4 0 1 2 |
+```
+
+**Mixed** — quarters and beamed eighths side by side:
+
+```
+4/4 | 1 . 2 . 3 . 4 . |
+    | │ │ ┌─┐         |
+e   | 0 2 3 5 - - - - |
+```
+
+Beams also bridge over empty slots as long as both neighbours are in the same beat. The duration row only appears once at least one note has an explicit duration set.
 
 ## Setup (lazy.nvim)
 
