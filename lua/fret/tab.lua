@@ -45,14 +45,14 @@ function M.get_note(song, sec, mi, si, str)
   return m.slots[si] and m.slots[si][str]
 end
 
-local MAX_FRET = 12
+M.MAX_FRET = 24
 
 function M.set_note(song, sec, mi, si, str, fret)
   local s = song.sections[sec]
   if not s then return end
   local m = s.measures[mi]
   if not m then return end
-  if fret ~= nil and (fret < 0 or fret > MAX_FRET) then return end
+  if fret ~= nil and (fret < 0 or fret > M.MAX_FRET) then return end
   if not m.slots[si] then m.slots[si] = {} end
   m.slots[si][str] = fret
 end
