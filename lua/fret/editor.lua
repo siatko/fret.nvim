@@ -182,8 +182,8 @@ local function enter_note(bufnr, first_digit)
 
   local fret = tonumber(digits)
   if fret then
-    if fret > 12 then
-      vim.notify("fret: maximum fret is 12", vim.log.levels.WARN)
+    if fret > tab_mod.MAX_FRET then
+      vim.notify("fret: maximum fret is " .. tab_mod.MAX_FRET, vim.log.levels.WARN)
     else
       tab_mod.set_note(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str, fret)
       mark_dirty(bufnr)
