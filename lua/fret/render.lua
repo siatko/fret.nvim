@@ -105,9 +105,9 @@ local function render_dur_segment(measure, widths, spm, subdivision)
   return seg
 end
 
-local function fmt_fret(fret, width)
+local function fmt_fret(fret, width, suffix)
   if fret == nil then return string.rep("-", width) end
-  local s = tostring(fret)
+  local s = tostring(fret) .. (suffix or "")
   return string.rep(" ", width - #s) .. s
 end
 
@@ -121,10 +121,11 @@ local function measure_col_widths(measure, spm, subdivision)
   local widths = {}
   for si = 1, spm do
     local slot = measure.slots[si] or {}
-    -- minimum width must fit the beat label (e.g. "10" is 2 chars wide)
     local w = #beat_label(si, subdivision)
-    for _, fret in pairs(slot) do
-      local d = #tostring(fret)
+    for str_idx, fret in pairs(slot) do
+      local art = measure.articulation and measure.articulation[si] and measure.articulation[si][str_idx]
+      local suffix_len = (art and tab.is_decoration(art)) and #tab.display_char(art) or 0
+      local d = #tostring(fret) + suffix_len
       if d > w then w = d end
     end
     widths[si] = w
@@ -243,6 +244,7 @@ function M.render(song)
       for si = 1, spm do seg_w = seg_w + widths[si] + 1 end
       bar = bar .. " " .. num_str .. string.rep(" ", seg_w - 1 - #num_str) .. "|"
 
+
       for si = 1, spm do
         slot_starts[sec_idx][mi][si] = col
         slot_widths[sec_idx][mi][si] = widths[si]
@@ -250,7 +252,10 @@ function M.render(song)
         seg_ruler = seg_ruler .. lpad(beat_label(si, subdivision), widths[si]) .. " "
         for str_idx = 1, n_strings do
           local fret = measure.slots[si] and measure.slots[si][str_idx]
-          seg_strs[str_idx] = seg_strs[str_idx] .. fmt_fret(fret, widths[si]) .. " "
+          local art  = measure.articulation and measure.articulation[si] and measure.articulation[si][str_idx]
+          local decoration_suffix = (art and tab.is_decoration(art)) and tab.display_char(art) or nil
+          local connection_char   = (art and tab.is_connection(art)) and tab.display_char(art) or nil
+          seg_strs[str_idx] = seg_strs[str_idx] .. fmt_fret(fret, widths[si], decoration_suffix) .. (connection_char or " ")
         end
 
         col = col + widths[si] + 1  -- slot chars + trailing " "
