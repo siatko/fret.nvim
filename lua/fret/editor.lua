@@ -350,7 +350,12 @@ local function toggle_articulation(bufnr, kind)
   if not st then return end
 
   local cur = tab_mod.get_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str)
-  local next_kind = (cur == kind) and nil or kind
+  local next_kind
+    if cur == kind then
+      next_kind = nil
+    else
+      next_kind = kind
+    end
 
   tab_mod.set_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str, next_kind)
   local after = tab_mod.get_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str)
