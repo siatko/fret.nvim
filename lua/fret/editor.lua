@@ -343,6 +343,60 @@ local function cycle_duration(bufnr)
   vim.api.nvim_echo({ { "duration: " .. name, "Normal" } }, false, {})
 end
 
+-- ── articulations ────────────────────────────────────────────────────────────
+
+local function toggle_articulation(bufnr, kind)
+  local st = get_state(bufnr)
+  if not st then return end
+
+  local cur = tab_mod.get_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str)
+  local next_kind
+    if cur == kind then
+      next_kind = nil
+    else
+      next_kind = kind
+    end
+
+  tab_mod.set_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str, next_kind)
+  local after = tab_mod.get_articulation(st.song, st.cur_sec, st.cur_mi, st.cur_si, st.cur_str)
+
+  if next_kind ~= nil and after ~= next_kind then
+    vim.notify("fret: cannot set articulation here", vim.log.levels.WARN)
+    return
+  end
+
+  mark_dirty(bufnr)
+  redraw(bufnr)
+  vim.api.nvim_echo({ { "articulation: " .. (after or "none"), "Normal" } }, false, {})
+end
+
+local ARTICULATIONS = {
+  v      = { label = "vibrato",    fn = toggle_articulation },
+  h      = { label = "hammer-on",  fn = toggle_articulation },
+  p      = { label = "pull-off",   fn = toggle_articulation },
+  ["/"]  = { label = "slide up",   fn = toggle_articulation },
+  ["\\"] = { label = "slide down", fn = toggle_articulation },
+}
+
+local function articulation_dispatch(bufnr)
+  local labels = {}
+  for key, art in pairs(ARTICULATIONS) do
+    table.insert(labels, key .. "=" .. art.label)
+  end
+  table.sort(labels)
+  vim.api.nvim_echo({ { "articulation: " .. table.concat(labels, "  "), "Normal" } }, false, {})
+  local ok, key = pcall(vim.fn.getcharstr)
+  if not ok then return end
+
+  local art = ARTICULATIONS[key]
+  if not art then
+    vim.notify("fret: unknown articulation '" .. key .. "'", vim.log.levels.WARN)
+    return
+  end
+
+  art.fn(bufnr, key)
+end
+
 -- ── time sig / subdivision ────────────────────────────────────────────────────
 
 local function set_timesig(bufnr)
@@ -661,6 +715,7 @@ local function setup_keymaps(bufnr)
   map(km.move_down,      function() move_down(bufnr) end)
   map(km.clear_note,     function() clear_note(bufnr) end)
   map(km.set_duration,   function() cycle_duration(bufnr) end)
+  map(km.articulation,   function() articulation_dispatch(bufnr) end)
   map(km.add_measure,    function() add_measure(bufnr) end)
   map(km.delete_measure, function() delete_measure(bufnr) end)
   map(km.set_timesig,    function() set_timesig(bufnr) end)

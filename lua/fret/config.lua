@@ -10,6 +10,7 @@ M.defaults = {
     move_right     = "l",
     move_up        = "k",
     move_down      = "j",
+    articulation   = "A",
     clear_note     = "x",
     set_duration   = "d",
     add_measure    = "m",

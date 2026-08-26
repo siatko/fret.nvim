@@ -127,4 +127,50 @@ function M.set_subdivision(song, subdiv)
   end
 end
 
+local ARTICULATION_KINDS = { v = true, h = true, p = true, ["/"] = true, ["\\"] = true }
+local CONNECT_KINDS      = { h = true, p = true, ["/"] = true, ["\\"] = true }
+local DECORATION_KINDS   = { v = true }
+local DISPLAY_CHARS      = { v = "~", h = "h", p = "p", ["/"] = "/", ["\\"] = "\\" }
+
+function M.display_char(kind)
+  return DISPLAY_CHARS[kind]
+end
+
+function M.is_connection(kind)
+  return CONNECT_KINDS[kind] == true
+end
+
+function M.is_decoration(kind)
+  return DECORATION_KINDS[kind] == true
+end
+
+function M.set_articulation(song, sec, mi, si, str, kind)
+  local s = song.sections[sec]
+  if not s then return end
+  local m = s.measures[mi]
+  if not m then return end
+
+  if kind ~= nil then
+    if not ARTICULATION_KINDS[kind] then return end
+    if not m.slots[si] or m.slots[si][str] == nil then return end
+    if CONNECT_KINDS[kind] then
+      local spm = M.slots_per_measure(song)
+      if si >= spm then return end
+    end
+  end
+
+  if not m.articulation then m.articulation = {} end
+  if not m.articulation[si] then m.articulation[si] = {} end
+  m.articulation[si][str] = kind
+end
+
+function M.get_articulation(song, sec, mi, si, str)
+  local s = song.sections[sec]
+  if not s then return end
+  local m = s.measures[mi]
+  if not m then return end
+  if not m.articulation then return end
+  return m.articulation[si] and m.articulation[si][str]
+end
+
 return M
